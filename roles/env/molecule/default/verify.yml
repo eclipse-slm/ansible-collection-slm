@@ -1,0 +1,15 @@
+---
+# Purpose: assert that the instance really ended up in the expected state.
+# Molecule calls this playbook with `molecule verify`.
+- name: Verify
+  hosts: molecule-slm
+  gather_facts: false # Quicker, if you do not need facts
+  tasks:
+    - name: Stat of Install Directory and Content
+      ansible.builtin.stat:
+        path: "/install"
+      loop:
+        - "/install"
+        - "/install/config"
+        - "/install/deployment"
+        - "/install/env.yml"

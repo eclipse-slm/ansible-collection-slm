@@ -1,0 +1,8 @@
+- name: Install SLM
+  hosts: "{{ target_host | default('localhost') }}"
+  become: true
+  gather_facts: false
+  tasks:
+    - name: "TODO: Implement"
+      ansible.builtin.debug:
+        msg: "This task is a placeholder for the SLM installation process."

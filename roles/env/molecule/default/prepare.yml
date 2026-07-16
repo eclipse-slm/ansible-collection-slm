@@ -1,0 +1,14 @@
+---
+- name: Prepare
+  hosts: molecule-slm
+  gather_facts: false
+  tasks:
+    - name: Create Symbolic link from collection's roles folder to scneario folder
+      ansible.builtin.file:
+        src: ../../../../roles
+        dest: ./roles
+        state: link
+      delegate_to: localhost
+
+    - name: Install python3
+      ansible.builtin.raw: apt-get update && apt-get install -y python3

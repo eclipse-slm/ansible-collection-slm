@@ -1,0 +1,84 @@
+#SPDX-License-Identifier: MIT-0
+---
+# tasks file for env
+- name: "Set environment variables from host environment"
+  ansible.builtin.set_fact:
+    SLM_VERSION: "{{ lookup('ansible.builtin.env', 'SLM_VERSION') }}"
+    SLM_HOSTNAME: "{{ lookup('ansible.builtin.env', 'SLM_HOSTNAME') }}"
+    SLM_IP: "{{ lookup('ansible.builtin.env', 'SLM_IP') }}"
+    INSTALL_DIRECTORY: "{{ lookup('ansible.builtin.env', 'INSTALL_DIRECTORY') }}"
+
+- name: Assert Inputs are set (SLM_VERSION, SLM_HOSTNAME, SLM_IP, INSTALL_DIRECTORY)
+  ansible.builtin.assert:
+    that:
+      - item.value is defined
+      - item.value | length > 0
+    fail_msg: "Required environment variable '{{ item.name }}' is not set."
+  loop:
+    - name: SLM_VERSION
+      value: "{{ SLM_VERSION }}"
+    - name: SLM_HOSTNAME
+      value: "{{ SLM_HOSTNAME }}"
+    - name: SLM_IP
+      value: "{{ SLM_IP }}"
+    - name: INSTALL_DIRECTORY
+      value: "{{ INSTALL_DIRECTORY }}"
+
+- name: Load env.custom.yml
+  block:
+    - name: "Check if env.custom.yml exists"
+      ansible.builtin.stat:
+        path: "/env/env.custom.yml"
+      register: env_custom_file
+
+    - name: "Import config from env.custom.yml"
+      when: env_custom_file.stat.exists
+      ansible.builtin.include_vars:
+        file: "/env/env.custom.yml"
+      register: include_vars_env_custom
+
+- name: Load env.override.yml
+  block:
+    - name: "Check if env.override.yml exists"
+      ansible.builtin.stat:
+        path: "/env/env.override.yml"
+      register: env_override_file
+
+    - name: "Import config from env.override.yml"
+      when: env_override_file.stat.exists
+      ansible.builtin.include_vars:
+        file: "/env/env.override.yml"
+      register: include_vars_env_override
+
+# - name: "Combine facts from env.custom.yml"
+#   when: include_vars_env_custom.ansible_facts is defined
+#   ansible.builtin.set_fact:
+#     ENV: "{{ ENV | combine(include_vars_env_custom.ansible_facts, recursive=true) }}"
+
+# - name: "Combine facts from env.override.yml"
+#   when: include_vars_env_override.ansible_facts is defined
+#   ansible.builtin.set_fact:
+#     ENV: "{{ ENV | combine(include_vars_env_override.ansible_facts, recursive=true) }}"
+
+- name: "Combine facts from env.custom.yml and env.override.yml"
+  when: item.ansible_facts is defined
+  ansible.builtin.set_fact:
+    ENV: "{{ ENV | combine(item.ansible_facts, recursive=true) }}"
+  loop:
+    - "{{ include_vars_env_custom }}"
+    - "{{ include_vars_env_override }}"
+
+- name: "Create directories required by installer"
+  ansible.builtin.file:
+    path: "/install/{{ item }}"
+    state: directory
+    mode: "0755"
+  loop:
+    - config
+    - deployment
+
+- name: "Write env.yml to /install directory"
+  ansible.builtin.copy:
+    content: "{{ ENV | to_nice_yaml }}"
+    dest: "/install/env.yml"
+    mode: "0644"

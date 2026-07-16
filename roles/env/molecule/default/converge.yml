@@ -8,3 +8,15 @@
     - name: Apply role under test
       ansible.builtin.include_role:
         name: env
+
+
+- name: Verify
+  hosts: molecule-slm
+  gather_facts: false # Disable if your role does not rely on facts
+  tasks:
+    - name: "Check if ENV fact is accessible and defined"
+      ansible.builtin.assert:
+        that:
+          - ENV is defined
+          - ENV | length > 0
+        fail_msg: "ENV fact is not accessible, not defined or empty."

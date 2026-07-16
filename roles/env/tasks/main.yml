@@ -24,6 +24,10 @@
     - name: INSTALL_DIRECTORY
       value: "{{ INSTALL_DIRECTORY }}"
 
+- name: Init ENV based on defaults
+  ansible.builtin.set_fact:
+    ENV: "{{ ENV }}"
+
 - name: Load env.custom.yml
   block:
     - name: "Check if env.custom.yml exists"
@@ -72,3 +76,6 @@
     content: "{{ ENV | to_nice_yaml }}"
     dest: "/install/env.yml"
     mode: "0644"
+
+- debug:
+    var: ENV

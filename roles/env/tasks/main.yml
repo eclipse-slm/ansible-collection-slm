@@ -50,16 +50,6 @@
         file: "/env/env.override.yml"
       register: include_vars_env_override
 
-# - name: "Combine facts from env.custom.yml"
-#   when: include_vars_env_custom.ansible_facts is defined
-#   ansible.builtin.set_fact:
-#     ENV: "{{ ENV | combine(include_vars_env_custom.ansible_facts, recursive=true) }}"
-
-# - name: "Combine facts from env.override.yml"
-#   when: include_vars_env_override.ansible_facts is defined
-#   ansible.builtin.set_fact:
-#     ENV: "{{ ENV | combine(include_vars_env_override.ansible_facts, recursive=true) }}"
-
 - name: "Combine facts from env.custom.yml and env.override.yml"
   when: item.ansible_facts is defined
   ansible.builtin.set_fact:

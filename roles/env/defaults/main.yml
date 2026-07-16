@@ -312,8 +312,8 @@ ENV:
       PORT:
         INTERNAL: 3306
         EXTERNAL: -1
-      DATABASE_PASSWORD: ''
-      DATABASE_ROOT_PASSWORD: ''
+      PASSWORD: ''
+      ROOT_PASSWORD: ''
 
   VAULT:
     IMAGE: "ghcr.io/eclipse-slm/vault:1.21.2"

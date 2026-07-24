@@ -1,0 +1,26 @@
+---
+# Write all internal service hosts to /etc/hosts
+- name: Set service names
+  ansible.builtin.set_fact:
+    service_names_first_level: "{{ ENV.keys() | list }}"
+    service_names_second_level: "{{ ENV.AAS.keys() | list }}"
+
+- name: Add internal hosts to /etc/hosts (first level)
+  when: ENV[item].HOST.INTERNAL is defined
+  ansible.builtin.lineinfile:
+    path: /etc/hosts
+    line: "127.0.0.1 {{ ENV[item].HOST.INTERNAL }}"
+    regexp: "{{ ENV[item].HOST.INTERNAL }}"
+    unsafe_writes: true
+    state: present
+  loop: "{{ service_names_first_level }}"
+
+- name: Add internal hosts to /etc/hosts (second level)
+  when: ENV.AAS[item].HOST.INTERNAL is defined
+  ansible.builtin.lineinfile:
+    path: /etc/hosts
+    line: "127.0.0.1 {{ ENV.AAS[item].HOST.INTERNAL }}"
+    regexp: "{{ ENV.AAS[item].HOST.INTERNAL }}"
+    unsafe_writes: true
+    state: present
+  loop: "{{ service_names_second_level }}"

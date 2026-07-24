@@ -32,9 +32,25 @@
       failed_when: hosts_check.rc != 0
       changed_when: false
 
+    - name: "Check if /etc/hosts contains external service hosts (first level)"
+      when: ENV[item].HOST.EXTERNAL is defined
+      ansible.builtin.shell: "grep -q '{{ ENV[item].HOST.EXTERNAL }}' /etc/hosts"
+      loop: "{{ ENV.keys() | list }}"
+      register: hosts_check
+      failed_when: hosts_check.rc != 0
+      changed_when: false
+
     - name: "Check if /etc/hosts contains internal service hosts (second level)"
       when: ENV.AAS[item].HOST.INTERNAL is defined
       ansible.builtin.shell: "grep -q '{{ ENV.AAS[item].HOST.INTERNAL }}' /etc/hosts"
+      loop: "{{ ENV.AAS.keys() | list }}"
+      register: hosts_check
+      failed_when: hosts_check.rc != 0
+      changed_when: false
+
+    - name: "Check if /etc/hosts contains external service hosts (second level)"
+      when: ENV.AAS[item].HOST.EXTERNAL is defined  
+      ansible.builtin.shell: "grep -q '{{ ENV.AAS[item].HOST.EXTERNAL }}' /etc/hosts"
       loop: "{{ ENV.AAS.keys() | list }}"
       register: hosts_check
       failed_when: hosts_check.rc != 0

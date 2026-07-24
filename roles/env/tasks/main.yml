@@ -78,7 +78,7 @@
     mode: "0644"
 
 - name: "Print ENV variable"
-  debug:
+  ansible.builtin.debug:
     var: ENV
 
 - name: "Define global facts"

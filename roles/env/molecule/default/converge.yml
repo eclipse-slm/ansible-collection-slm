@@ -8,7 +8,10 @@
     - name: Apply role under test
       ansible.builtin.include_role:
         name: env
-
+        tasks_from: "{{ item }}"
+      loop:
+        - main
+        - write_hosts
 
 - name: Verify
   hosts: molecule-slm
@@ -20,3 +23,19 @@
           - ENV is defined
           - ENV | length > 0
         fail_msg: "ENV fact is not accessible, not defined or empty."
+
+    - name: "Check if /etc/hosts contains internal service hosts (first level)"
+      when: ENV[item].HOST.INTERNAL is defined
+      ansible.builtin.shell: "grep -q '{{ ENV[item].HOST.INTERNAL }}' /etc/hosts"
+      loop: "{{ ENV.keys() | list }}"
+      register: hosts_check
+      failed_when: hosts_check.rc != 0
+      changed_when: false
+
+    - name: "Check if /etc/hosts contains internal service hosts (second level)"
+      when: ENV.AAS[item].HOST.INTERNAL is defined
+      ansible.builtin.shell: "grep -q '{{ ENV.AAS[item].HOST.INTERNAL }}' /etc/hosts"
+      loop: "{{ ENV.AAS.keys() | list }}"
+      register: hosts_check
+      failed_when: hosts_check.rc != 0
+      changed_when: false

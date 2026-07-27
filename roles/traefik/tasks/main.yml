@@ -2,7 +2,7 @@
 ### Optional Inputs:
 # - _traefik_wait_for_up: true|false  # Wait for Traefik being up (default: true)
 
-- name: "Create Vault app role for Traefik"
+- name: "Traefik | Create Vault app role for Traefik"
   ansible.builtin.include_role:
     name: eclipse-slm.vault_client
     tasks_from: create_approle_with_policies
@@ -11,7 +11,7 @@
     _approle_name: "{{ vault_config.approle.name }}"
     _approle_policies: "{{ vault_config.approle.policies }}"
 
-- name: "Create role name for Vault PKI intermediate CA"
+- name: "Traefik | Create role name for Vault PKI intermediate CA"
   ansible.builtin.include_role:
     name: eclipse-slm.vault_client
     tasks_from: ca/create_role_name

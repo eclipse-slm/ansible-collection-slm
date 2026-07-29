@@ -6,9 +6,8 @@
     SLM_VERSION: "{{ lookup('ansible.builtin.env', 'SLM_VERSION') }}"
     SLM_HOSTNAME: "{{ lookup('ansible.builtin.env', 'SLM_HOSTNAME') }}"
     SLM_IP: "{{ lookup('ansible.builtin.env', 'SLM_IP') }}"
-    INSTALL_DIRECTORY: "{{ lookup('ansible.builtin.env', 'INSTALL_DIRECTORY') }}"
 
-- name: Assert Inputs are set (SLM_VERSION, SLM_HOSTNAME, SLM_IP, INSTALL_DIRECTORY)
+- name: Assert Inputs are set (SLM_VERSION, SLM_HOSTNAME, SLM_IP)
   ansible.builtin.assert:
     that:
       - item.value is defined
@@ -21,8 +20,6 @@
       value: "{{ SLM_HOSTNAME }}"
     - name: SLM_IP
       value: "{{ SLM_IP }}"
-    - name: INSTALL_DIRECTORY
-      value: "{{ INSTALL_DIRECTORY }}"
 
 - name: Init ENV based on defaults
   ansible.builtin.set_fact:

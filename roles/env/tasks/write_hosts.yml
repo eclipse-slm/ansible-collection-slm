@@ -5,6 +5,14 @@
     service_names_first_level: "{{ ENV.keys() | list }}"
     service_names_second_level: "{{ ENV.AAS.keys() | list }}"
 
+- name: "Write SLM_HOSTNAME '{{ ENV.SLM_HOSTNAME }}' to /etc/hosts"
+  ansible.builtin.lineinfile:
+    path: /etc/hosts
+    line: "127.0.0.1 {{ ENV.SLM_HOSTNAME }}"
+    regexp: "{{ ENV.SLM_HOSTNAME }}"
+    unsafe_writes: true
+    state: present
+
 - name: Add internal hosts to /etc/hosts (first level)
   block:
     - name: Write internal hosts to /etc/hosts (first level)

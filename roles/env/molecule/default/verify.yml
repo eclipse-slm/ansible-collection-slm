@@ -4,12 +4,36 @@
 - name: Verify
   hosts: molecule-slm
   gather_facts: false # Quicker, if you do not need facts
+  vars_files:
+    - ../../defaults/main.yml
   tasks:
+    - name: "Set SLM_HOSTNAME fact"
+      ansible.builtin.set_fact:
+        SLM_HOSTNAME: "{{ lookup('env', 'SLM_HOSTNAME') }}"
+
+    - name: "Grep '{{ SLM_HOSTNAME }}' from /etc/hosts"
+      ansible.builtin.shell: "grep '{{ ENV.SLM_HOSTNAME }}' /etc/hosts"
+      register: hosts_check
+      changed_when: false
+
+    - name: Assert /etc/hosts contains SLM_HOSTNAME
+      ansible.builtin.assert:
+        that:
+          - hosts_check.stdout_lines | length > 0
+        fail_msg: "SLM_HOSTNAME '{{ ENV.SLM_HOSTNAME }}' not found in /etc/hosts"
+
     - name: Stat of Install Directory and Content
       ansible.builtin.stat:
-        path: "/install"
+        path: "{{ item }}"
+      register: install_dir_stat
       loop:
         - "/install"
         - "/install/config"
         - "/install/deployment"
         - "/install/env.yml"
+
+    - name: Assert Install Directory and Content exists
+      ansible.builtin.assert:
+        that:
+          - install_dir_stat.results | selectattr('stat.exists', 'equalto', true) | list | length == 4
+        fail_msg: "Install directory or content is missing"

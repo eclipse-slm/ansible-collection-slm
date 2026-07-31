@@ -1,0 +1,46 @@
+---
+- name: VAULT | Get info on docker host containers
+  community.docker.docker_host_info:
+    containers: true
+  register: docker_host_info_result
+
+- name: VAULT | Lookup Container ID of vault container
+  ansible.builtin.set_fact:
+    vault_container_id: "{{ docker_host_info_result.containers | json_query(container_query) | first }}"
+  vars:
+    container_query: "[?Image.contains(@, '{{ ENV.VAULT.IMAGE | default('vault') }}')].Id"
+
+- name: "VAULT | Lookup container info"
+  community.docker.docker_container_info:
+    name: "{{ vault_container_id }}"
+  register: vault_container_info
+
+- name: "VAULT | Set container name"
+  ansible.builtin.set_fact:
+    vault_container_name: "{{ vault_container_info.container.Name.strip('/') }}"
+
+- name: "VAULT | Get Vault root token"
+  community.docker.docker_container_exec:
+    container: "{{ vault_container_name }}"
+    command: "cat /vault/config/root/root_token"
+  register: vault_root_token_line
+  until: "vault_root_token_line is not failed"
+  retries: 10
+  delay: 3
+  no_log: true
+
+- name: "VAULT | Set Vault root token"
+  ansible.builtin.set_fact:
+    vault_root_token: "{{ vault_root_token_line.stdout | trim }}"
+  no_log: true
+
+- name: "VAULT | Assert Vault root token"
+  ansible.builtin.assert:
+    that:
+      - vault_root_token is defined
+      - vault_root_token | length > 0
+    fail_msg: "Vault root token could not be read"
+  no_log: true
+
+### Outputs
+# - vault_root_token

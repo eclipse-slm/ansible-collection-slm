@@ -50,10 +50,14 @@
       register: vault_health
       failed_when: vault_health.json is not defined or vault_health.json.initialized is not defined
 
+    - name: Lookup Vault root token
+      ansible.builtin.include_tasks: "../../tasks/get_root_token.yml"
+
     - name: "Assert Vault is initialized and unsealed"
       ansible.builtin.assert:
         that:
           - vault_health.json.initialized == true
           - vault_health.json.sealed == false
+          - (vault_root_token is defined) and (vault_root_token | length > 0)
         fail_msg: "Vault is not properly initialized and unsealed. Initialized: {{ vault_health.json.initialized | default('unknown') }}, Sealed: {{ vault_health.json.sealed | default('unknown') }}"
         success_msg: "Vault is initialized and unsealed."

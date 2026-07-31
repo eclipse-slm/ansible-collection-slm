@@ -1,0 +1,21 @@
+---
+### Inputs
+- name: "Consul | Assert inputs of consul | get_consul_master_token.yml"
+  ansible.builtin.assert:
+    that:
+      - (ENV.COMPOSE_PROJECT_NAME is defined) and (ENV.COMPOSE_PROJECT_NAME|length > 0)
+
+- name: "Consul | Check if instance is already running"
+  community.docker.docker_container_info:
+    name: "/{{ ENV.COMPOSE_PROJECT_NAME }}-consul-1"
+  register: consul_container
+
+- name: "Consul | Set master token of existing instance"
+  when: consul_container.exists
+  ansible.builtin.set_fact:
+    consul_master_token: "{{ consul_container.container.Config.Env | regex_search('\\\"master\\\": \\\"(.*)\\\"', '\\1') | first }}"
+  no_log: true
+
+### Outputs
+# - consul_container
+# - consul_master_token

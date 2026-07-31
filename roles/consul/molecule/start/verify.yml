@@ -78,3 +78,15 @@
       loop: "{{ exposed_ports }}"
       loop_control:
         label: "Port {{ item }}"
+
+    - name: "Check consul master token is set"
+      ansible.builtin.include_tasks:
+        file: "../../tasks/get_consul_master_token.yml"
+
+    - name: "Assert consul master token is set"
+      ansible.builtin.assert:
+        that:
+          - consul_master_token is defined
+          - consul_master_token | length > 0
+        fail_msg: "Consul master token is not set or empty."
+        success_msg: "Consul master token is set."

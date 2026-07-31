@@ -53,24 +53,20 @@ ansible:
 
   playbooks:
     create: "../default/create-os.yml"
-    converge: converge.yml
     destroy: "../default/destroy-os.yml"
-    cleanup: cleanup.yml
     prepare: "../default/prepare.yml"
+    converge: converge.yml
     verify: verify.yml
 
 scenario:
   name: start
   test_sequence:
     - dependency
-    - cleanup
     - destroy
     - syntax
     - create
     - prepare
     - converge
     - idempotence
-    - side_effect
     - verify
-    - cleanup
     - destroy

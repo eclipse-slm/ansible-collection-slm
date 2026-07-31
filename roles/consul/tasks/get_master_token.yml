@@ -1,6 +1,6 @@
 ---
 ### Inputs
-- name: "Consul | Assert inputs of consul | get_consul_master_token.yml"
+- name: "Consul | Assert inputs of consul | get_master_token.yml"
   ansible.builtin.assert:
     that:
       - (ENV.COMPOSE_PROJECT_NAME is defined) and (ENV.COMPOSE_PROJECT_NAME|length > 0)

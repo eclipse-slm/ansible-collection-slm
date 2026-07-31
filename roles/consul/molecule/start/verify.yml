@@ -81,7 +81,7 @@
 
     - name: "Check consul master token is set"
       ansible.builtin.include_tasks:
-        file: "../../tasks/get_consul_master_token.yml"
+        file: "../../tasks/get_master_token.yml"
 
     - name: "Assert consul master token is set"
       ansible.builtin.assert:

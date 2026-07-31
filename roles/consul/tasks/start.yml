@@ -9,7 +9,7 @@
   block:
     - name: "Consul | Check if instance is already running and get master token"
       ansible.builtin.include_tasks:
-        file: "get_consul_master_token.yml"
+        file: "get_master_token.yml"
 
     - name: "Consul | Get master token of existing instance"
       when: consul_container.exists

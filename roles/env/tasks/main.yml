@@ -33,7 +33,9 @@
       register: env_custom_file
 
     - name: "Import config from env.custom.yml"
-      when: env_custom_file.stat.exists
+      when:
+        - env_custom_file.stat.exists
+        - env_custom_file.stat.readable
       ansible.builtin.include_vars:
         file: "/env/env.custom.yml"
       register: include_vars_env_custom
@@ -45,11 +47,10 @@
         path: "/env/env.override.yml"
       register: env_override_file
 
-    - debug:
-        var: env_override_file
-
     - name: "Import config from env.override.yml"
-      when: env_override_file.stat.exists
+      when:
+        - env_override_file.stat.exists
+        - env_override_file.stat.readable
       ansible.builtin.include_vars:
         file: "/env/env.override.yml"
       register: include_vars_env_override

@@ -45,6 +45,9 @@
         path: "/env/env.override.yml"
       register: env_override_file
 
+    - debug:
+        var: env_override_file
+
     - name: "Import config from env.override.yml"
       when: env_override_file.stat.exists
       ansible.builtin.include_vars:

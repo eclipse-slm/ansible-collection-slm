@@ -1,4 +1,4 @@
-- name: "Assert inputs of 'consul | start.yml'"
+- name: "Consul | Assert inputs of 'consul | start.yml'"
   ansible.builtin.assert:
     that:
       - (ENV.CONSUL.SCHEME.INTERNAL is defined) and (ENV.CONSUL.SCHEME.INTERNAL|length > 0)
@@ -102,7 +102,7 @@
   loop:
     - { key: "config/consul/data", value: "{{ consul_config | to_yaml }}" }
 
-- name: "Store resulting compose file"
+- name: "Consul | Store resulting compose file"
   when: (_store_compose_dir is defined) and (_store_compose_dir|length > 0)
   ansible.builtin.template:
     src: "consul.yml"

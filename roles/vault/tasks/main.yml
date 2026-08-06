@@ -28,7 +28,7 @@
       dest: "{{ _store_compose_dir | regex_replace('/+$', '') }}/vault.yml"
     when: (_store_compose_dir is defined) and (_store_compose_dir|length > 0)
 
-  - name: "Wait for Vault ('{{ vault.url.internal }}') being up"
+  - name: "VAULT | Wait for Vault ('{{ vault.url.internal }}') being up"
     ansible.builtin.uri:
       url: "{{ vault.url.internal }}/v1/sys/health"
       status_code: 200
@@ -109,14 +109,14 @@
 
 - name: "VAULT | Restart Vault container to use and trust newly created root CA"
   block:
-  - name: "Restart Vault container to use and trust newly created root CA"
+  - name: "VAULT | Restart Vault container to use and trust newly created root CA"
     community.docker.docker_container:
       name: "{{ vault_compose_start_output.images | community.general.json_query(vault_query) | first }}"
       restart: true
     vars:
       vault_query: "[?Repository.contains(@, 'vault')].ContainerName"
 
-  - name: "Wait for Vault ('{{ vault.url.internal }}') being up"
+  - name: "VAULT | Wait for Vault ('{{ vault.url.internal }}') being up"
     ansible.builtin.uri:
       url: "{{ vault.url.internal }}/v1/sys/health"
       status_code: 200

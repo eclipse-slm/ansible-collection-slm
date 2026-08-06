@@ -1,5 +1,5 @@
 ### Inputs
-- name: "Assert inputs of 'vault/init | init_after_keycloak.yml'"
+- name: "VAULT | Assert inputs of 'vault/init | init_after_keycloak.yml'"
   ansible.builtin.assert:
     that:
       - (vault.url.internal is defined) and (vault.url.internal|length > 0)                   # URL of the Vault instance
@@ -10,7 +10,7 @@
       - (keycloak.url.external_without_port is defined) and (keycloak.url.external_without_port|length > 0) # External URL of Keycloak without port (required for OIDC discovery URL)
       - (ENV.KEYCLOAK.REALM is defined) and (ENV.KEYCLOAK.REALM|length > 0)                   # Keycloak realm (required for OIDC discovery URL)
 
-- name: "Store config"
+- name: "VAULT | Store config"
   block:
     - ansible.builtin.set_fact:
         vault_config_consul:
@@ -26,7 +26,7 @@
           tokens:
             root: "{{ _vault_root_token }}"
 
-- name: "Register Vault instance at Consul (discovery server)"
+- name: "VAULT | Register Vault instance at Consul (discovery server)"
   ansible.builtin.include_role:
     name: eclipse-slm.consul_client
     tasks_from: register_service
@@ -38,7 +38,7 @@
     _additional_tags:
       - "vault"
 
-- name: "Configure JWT auth via Keycloak"
+- name: "VAULT | Configure JWT auth via Keycloak"
   ansible.builtin.import_role:
     name: eclipse-slm.vault_client
     tasks_from: configure_keycloak_jwt_auth_method

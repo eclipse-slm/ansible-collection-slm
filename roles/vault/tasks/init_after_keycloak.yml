@@ -1,5 +1,5 @@
 ### Inputs
-- name: "VAULT | Assert inputs of 'vault/init | init_after_keycloak.yml'"
+- name: "VAULT | Assert inputs | init_after_keycloak.yml"
   ansible.builtin.assert:
     that:
       - (vault.url.internal is defined) and (vault.url.internal|length > 0)                   # URL of the Vault instance
@@ -12,10 +12,12 @@
 
 - name: "VAULT | Store config"
   block:
-    - ansible.builtin.set_fact:
+    - name: "VAULT | Init config"
+      ansible.builtin.set_fact:
         vault_config_consul:
 
-    - ansible.builtin.import_role:
+    - name: "VAULT | Create or add config to Consul KV"
+      ansible.builtin.import_role:
         name: eclipse-slm.consul_client
         tasks_from: create_or_add_config
       vars:

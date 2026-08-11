@@ -5,6 +5,12 @@
       - (ENV.CONSUL.HOST.INTERNAL is defined) and (ENV.CONSUL.HOST.INTERNAL|length > 0)
       - (ENV.CONSUL.PORT.INTERNAL is defined)
 
+- name: "Consul | Make sure py-consul is installed"
+  ansible.builtin.pip:
+    name: py-consul
+    state: present
+    break_system_packages: true
+
 - name: "Consul | Config"
   block:
     - name: "Consul | Check if instance is already running and get master token"

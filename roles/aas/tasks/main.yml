@@ -1,4 +1,11 @@
 ---
+### Inputs:
+- name: SLM | AAS | Assert inputs for main.yml
+  ansible.builtin.assert:
+    that:
+      - lookup('ansible.builtin.env', 'INSTALL_DIRECTORY') | length > 0
+    fail_msg: "Required environment variable INSTALL_DIRECTORY is not set or empty."
+
 - name: Lookup INSTALL_DIRECTORY
   ansible.builtin.set_fact:
     INSTALL_DIRECTORY: "{{ lookup('env', 'INSTALL_DIRECTORY') }}"
@@ -11,14 +18,14 @@
   block:
   - name: "Ensure AAS GUI config directory exists"
     ansible.builtin.file:
-      path: "/install/config/aas-gui"
+      path: "{{ INSTALL_DIRECTORY }}/config/aas-gui"
       state: directory
       mode: "0755"
 
   - name: "Write basyx-infra.yml for AAS GUI"
     ansible.builtin.template:
       src: "basyx-infra.yml"
-      dest: "/install/config/aas-gui/basyx-infra.yml"
+      dest: "{{ INSTALL_DIRECTORY }}/config/aas-gui/basyx-infra.yml"
       mode: "0644"
 
 - name: "Start containers"

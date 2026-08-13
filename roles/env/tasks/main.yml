@@ -1,13 +1,16 @@
 #SPDX-License-Identifier: MIT-0
 ---
+
 # tasks file for env
 - name: "Set environment variables from host environment"
   ansible.builtin.set_fact:
     SLM_VERSION: "{{ lookup('ansible.builtin.env', 'SLM_VERSION') }}"
     SLM_HOSTNAME: "{{ lookup('ansible.builtin.env', 'SLM_HOSTNAME') }}"
     SLM_IP: "{{ lookup('ansible.builtin.env', 'SLM_IP') }}"
+    INSTALL_DIRECTORY: "{{ lookup('ansible.builtin.env', 'INSTALL_DIRECTORY') }}"
 
-- name: Assert Inputs are set (SLM_VERSION, SLM_HOSTNAME, SLM_IP)
+### Inputs:
+- name: Assert Inputs are set (SLM_VERSION, SLM_HOSTNAME, SLM_IP, INSTALL_DIRECTORY)
   ansible.builtin.assert:
     that:
       - item.value is defined
@@ -20,6 +23,8 @@
       value: "{{ SLM_HOSTNAME }}"
     - name: SLM_IP
       value: "{{ SLM_IP }}"
+    - name: INSTALL_DIRECTORY
+      value: "{{ INSTALL_DIRECTORY }}"
 
 - name: Init ENV based on defaults
   ansible.builtin.set_fact:
@@ -65,17 +70,17 @@
 
 - name: "Create directories required by installer"
   ansible.builtin.file:
-    path: "/install/{{ item }}"
+    path: "{{ INSTALL_DIRECTORY }}/{{ item }}"
     state: directory
     mode: "0755"
   loop:
     - config
     - deployment
 
-- name: "Write env.yml to /install directory"
+- name: "Write env.yml to {{ INSTALL_DIRECTORY }} directory"
   ansible.builtin.copy:
     content: "{{ ENV | to_nice_yaml }}"
-    dest: "/install/env.yml"
+    dest: "{{ INSTALL_DIRECTORY }}/env.yml"
     mode: "0644"
 
 - name: "Print ENV variable"

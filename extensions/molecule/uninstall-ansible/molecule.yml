@@ -12,7 +12,7 @@ platforms:
   - name: slm-uninstall-ansible
     groups:
       - slm
-      - slm-uninstall-ansible
+      - slm_uninstall_ansible
     # Kubevirt
     image: quay.io/containerdisks/ubuntu:24.04
     volume_size: 60Gi

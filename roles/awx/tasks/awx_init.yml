@@ -1,5 +1,5 @@
 ### Inputs
-- name: "Assert inputs of 'awx/init | awx_init.yml'"
+- name: "SLM | AWX | Assert inputs of 'awx/init | awx_init.yml'"
   ansible.builtin.assert:
     that:
       - (awx.url.internal is defined) and (awx.url.internal|length > 0)
@@ -8,11 +8,11 @@
       - (_consul_token is defined) and (_consul_token|length > 0)
       - (_awx_consul_token is defined) and (_awx_consul_token|length > 0)
 
-- name: "Set app name"
+- name: "SLM | AWX | Set app name"
   ansible.builtin.set_fact:
     _app_name: "awx"
 
-- name: "Create Vault App Roles"
+- name: "SLM | AWX | Create Vault App Roles"
   ansible.builtin.include_role:
     name: eclipse-slm.vault_client
     tasks_from: create_approle_with_policies.yml
@@ -24,7 +24,7 @@
   loop_control:
     loop_var: approle
 
-- name: "Remove organization"
+- name: "SLM | AWX | Remove organization"
   awx.awx.organization:
     controller_host: "{{ awx.url.internal }}"
     controller_username: "{{ _awx_admin_username }}"
@@ -33,7 +33,7 @@
     description: ""
     state: absent
 
-- name: "Add organization"
+- name: "SLM | AWX | Add organization"
   awx.awx.organization:
     controller_host: "{{ awx.url.internal }}"
     controller_username: "{{ _awx_admin_username }}"
@@ -42,7 +42,7 @@
     description: ""
     state: present
 
-- name: "Create default inventory"
+- name: "SLM | AWX | Create default inventory"
   awx.awx.inventory:
     controller_host: "{{ awx.url.internal }}"
     controller_username: "{{ _awx_admin_username }}"
@@ -52,7 +52,7 @@
     organization: "{{ awx_slm_organization_name }}"
     state: present
 
-- name: "Remove demo data"
+- name: "SLM | AWX | Remove demo data"
   ansible.builtin.include_role:
     name: eclipse-slm.awx_client
     tasks_from: demo_data_remove
@@ -60,7 +60,7 @@
     awx_username: "{{ _awx_admin_username }}"
     awx_password: "{{ _awx_admin_password }}"
 
-- name: "Add credential types"
+- name: "SLM | AWX | Add credential types"
   awx.awx.credential_type:
     controller_host: "{{ awx.url.internal }}"
     controller_username: "{{ _awx_admin_username }}"
@@ -82,7 +82,7 @@
     minio_access_key: "{{ app_configs.awx.minio['access-key'] }}"
     minio_secret_key: "{{ app_configs.awx.minio['secret-key'] }}"
 
-- name: "Add credentials"
+- name: "SLM | AWX | Add credentials"
   awx.awx.credential:
     controller_host: "{{ awx.url.internal }}"
     controller_username: "{{ _awx_admin_username }}"
@@ -93,7 +93,7 @@
     inputs: "{{ item.inputs }}"
   loop: "{{ awx_credentials }}"
 
-- name: "Add Execution Environment"
+- name: "SLM | AWX | Add Execution Environment"
   awx.awx.execution_environment:
     controller_host: "{{ awx.url.internal }}"
     controller_username: "{{ _awx_admin_username }}"
@@ -103,7 +103,7 @@
     organization: "{{ awx_slm_organization_name }}"
 
 - block:
-  - name: "Create Keycloak client for AWX"
+  - name: "SLM | AWX | Create Keycloak client for AWX"
     ansible.builtin.include_role:
       name: eclipse-slm.keycloak_client
       tasks_from: clients/create_client.yml
@@ -112,7 +112,7 @@
       _keycloak_access_token: "{{ keycloak_access_token }}"
       _keycloak_realm_name: "{{ ENV.KEYCLOAK.REALM }}"
 
-  - name: "Get OIDC JSON for Keycloak client '{{ client_id }}'"
+  - name: "SLM | AWX | Get OIDC JSON for Keycloak client '{{ client_id }}'"
     ansible.builtin.include_role:
       name: eclipse-slm.keycloak_client
       tasks_from: clients/get_oidc-keycloak-json
@@ -121,17 +121,17 @@
       _keycloak_realm_name: "{{ ENV.KEYCLOAK.REALM }}"
       client_id: "{{ awx_keycloak_client.client_id }}"
 
-  - name: "Create OIDC JSON Object (no-string)"
+  - name: "SLM | AWX | Create OIDC JSON Object (no-string)"
     when: keycloak_oidc_json is not string
     ansible.builtin.set_fact:
       keycloak_oidc_settings: "{{ keycloak_oidc_json }}"
 
-  - name: "Create OIDC JSON Object (string)"
+  - name: "SLM | AWX | Create OIDC JSON Object (string)"
     when: keycloak_oidc_json is string
     ansible.builtin.set_fact:
       keycloak_oidc_settings: "{{ keycloak_oidc_json | from_json }}"
 
-  - name: "Create OIDC Settings"
+  - name: "SLM | AWX | Create OIDC Settings"
     ansible.builtin.set_fact:
       new_oidc: "{{ lookup('template', 'oidc_settings.json.j2') }}"
 
@@ -140,7 +140,7 @@
         - (keycloak_oidc_settings is defined) and (keycloak_oidc_settings|length > 0)
       fail_msg: "Get of Keycloak OIDC settings failed"
 
-  - name: "Configure AWX OIDC adapter "
+  - name: "SLM | AWX | Configure AWX OIDC adapter "
     awx.awx.settings:
       controller_host: "{{ awx.url.internal }}"
       controller_username: "{{ _awx_admin_username }}"
@@ -148,11 +148,11 @@
       settings: "{{ new_oidc }}"
       validate_certs: false
 
-  - name: "Create Auth Mapping Settings"
+  - name: "SLM | AWX | Create Auth Mapping Settings"
     ansible.builtin.set_fact:
       auth_mapping: "{{ lookup('template', 'auth_mapping_settings.json.j2') }}"
 
-  - name: "Configure Auth Organization and Team Map "
+  - name: "SLM | AWX | Configure Auth Organization and Team Map "
     awx.awx.settings:
       controller_host: "{{ awx.url.internal }}"
       controller_username: "{{ _awx_admin_username }}"

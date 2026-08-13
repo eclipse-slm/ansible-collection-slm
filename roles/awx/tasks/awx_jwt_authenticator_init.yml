@@ -1,5 +1,5 @@
 ### Inputs
-- name: "Assert inputs of 'awx/init | awx_jwt_authenticator_init.yml'"
+- name: "SLM | AWX | Assert inputs of 'awx/init | awx_jwt_authenticator_init.yml'"
   ansible.builtin.assert:
     that:
       - (awx.url.internal is defined) and (awx.url.internal|length > 0)
@@ -9,9 +9,9 @@
       - (_awx_jwt_authenticator_password is defined) and (_awx_jwt_authenticator_password|length > 0)
       - (_consul_token is defined) and (_consul_token|length > 0)
 
-- name: "Add user '{{ _awx_jwt_authenticator_username }}'"
+- name: "SLM | AWX | Add user '{{ _awx_jwt_authenticator_username }}'"
   block:
-    - name: "Add user in AWX"
+    - name: "SLM | AWX | Add user in AWX"
       awx.awx.user:
         controller_host: "{{ awx.url.internal }}"
         controller_username: "{{ _awx_admin_username }}"
@@ -23,7 +23,8 @@
         last_name: JWT Authenticator
         superuser: true
         state: present
-    - name: "Add AWX JWT authenticator username and password in Consul"
+
+    - name: "SLM | AWX | Add AWX JWT authenticator username and password in Consul"
       ansible.builtin.include_role:
         name: eclipse-slm.consul_client
         tasks_from: create_or_add_config
@@ -33,7 +34,7 @@
             username: '{{ _awx_jwt_authenticator_username }}'
             password: '{{ _awx_jwt_authenticator_password}}'
 
-- name: "Create application 'awx_jwt_authenticator'"
+- name: "SLM | AWX | Create application 'awx_jwt_authenticator'"
   ansible.builtin.include_role:
     name: eclipse-slm.awx_client
     tasks_from: application_create.yml
@@ -44,7 +45,7 @@
     awx_application_description: "AWX JWT Authenticator"
     awx_organization_name: "{{ awx_slm_organization_name }}"
 
-- name: "Create team in which AWX JWT Authenticator can add new users"
+- name: "SLM | AWX | Create team in which AWX JWT Authenticator can add new users"
   awx.awx.team:
     controller_host: "{{ awx.url.internal }}"
     controller_username: "{{ _awx_admin_username }}"

@@ -1,12 +1,12 @@
 ### Inputs
-- name: "Consul | Assert inputs of 'consul/init | main.yml'"
+- name: "SLM | CONSUL | Assert inputs of 'consul/init | main.yml'"
   ansible.builtin.assert:
     that:
       - (consul.url.internal is defined) and (consul.url.internal|length > 0)                 # URL of the Consul instance to be configured
       - (_consul_token is defined) and (_consul_token|length > 0)           # Token to authenticate with Consul
       - (keycloak.url.internal is defined) and (keycloak.url.internal|length > 0)   # Auth URL of the Keycloak instance used for auth method
 
-- name: "Consul | Wait for Keycloak ('{{ keycloak.url.internal }}') being up "
+- name: "SLM | CONSUL | Wait for Keycloak ('{{ keycloak.url.internal }}') being up "
   ansible.builtin.uri:
     url: "{{ keycloak.url.internal }}/realms/fabos/.well-known/openid-configuration"
     validate_certs: false
@@ -16,7 +16,7 @@
   retries: 120
   delay: 3
 
-- name: "Consul | Create auth method for Keycloak"
+- name: "SLM | CONSUL | Create auth method for Keycloak"
   ansible.builtin.uri:
     url: "{{ consul.url.internal }}/v1/acl/auth-method"
     method: PUT
@@ -27,9 +27,9 @@
     status_code: 200
   register: output_put_auth_method
 
-- name: "Consul | Create token for SLM"
+- name: "SLM | CONSUL | Create token for SLM"
   block:
-    - name: "Consul | Create SLM node"
+    - name: "SLM | CONSUL | Create SLM node"
       ansible.builtin.uri:
         url: "{{ consul.url.internal }}/v1/catalog/register"
         method: PUT
@@ -65,7 +65,7 @@
             minio_console_url: "{{ minio.url.console.external }}"
         status_code: 200
 
-    - name: "Consul | Create policy for SLM node to make it publicly available"
+    - name: "SLM | CONSUL | Create policy for SLM node to make it publicly available"
       community.general.consul_policy:
         scheme: "{{ ENV.CONSUL.SCHEME.INTERNAL }}"
         host: "{{ ENV.CONSUL.HOST.INTERNAL }}"
@@ -77,7 +77,7 @@
             policy = "read"
           }
 
-    - name: "Consul | Assign policy to anonymous token"
+    - name: "SLM | CONSUL | Assign policy to anonymous token"
       community.general.consul_token:
         scheme: "{{ ENV.CONSUL.SCHEME.INTERNAL }}"
         host: "{{ ENV.CONSUL.HOST.INTERNAL }}"

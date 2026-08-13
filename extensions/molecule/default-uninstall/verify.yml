@@ -16,7 +16,7 @@
 
     - name: Verify all Docker resource lists are empty
       ansible.builtin.assert:
-        that: "item.count == 0"
+        that: item.count == item.expected
         fail_msg: "Verification failed: Found {{ item.count }} Docker {{ item.type }}(s) on the host."
         success_msg: "Clean: No Docker {{ item.type }} found."
       loop:

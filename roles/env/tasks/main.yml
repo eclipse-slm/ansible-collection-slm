@@ -1,8 +1,7 @@
 #SPDX-License-Identifier: MIT-0
 ---
-
 # tasks file for env
-- name: "Set environment variables from host environment"
+- name: "SLM | ENV | Set environment variables from host environment"
   ansible.builtin.set_fact:
     SLM_VERSION: "{{ lookup('ansible.builtin.env', 'SLM_VERSION') }}"
     SLM_HOSTNAME: "{{ lookup('ansible.builtin.env', 'SLM_HOSTNAME') }}"
@@ -10,7 +9,7 @@
     INSTALL_DIRECTORY: "{{ lookup('ansible.builtin.env', 'INSTALL_DIRECTORY') }}"
 
 ### Inputs:
-- name: Assert Inputs are set (SLM_VERSION, SLM_HOSTNAME, SLM_IP, INSTALL_DIRECTORY)
+- name: "SLM | ENV | Assert Inputs are set (SLM_VERSION, SLM_HOSTNAME, SLM_IP, INSTALL_DIRECTORY)"
   ansible.builtin.assert:
     that:
       - item.value is defined
@@ -26,18 +25,18 @@
     - name: INSTALL_DIRECTORY
       value: "{{ INSTALL_DIRECTORY }}"
 
-- name: Init ENV based on defaults
+- name: "SLM | ENV | Init ENV based on defaults"
   ansible.builtin.set_fact:
     ENV: "{{ ENV }}"
 
-- name: Load env.custom.yml
+- name: "SLM | ENV | Load env.custom.yml"
   block:
     - name: "Check if env.custom.yml exists"
       ansible.builtin.stat:
         path: "/env/env.custom.yml"
       register: env_custom_file
 
-    - name: "Import config from env.custom.yml"
+-    - name: "SLM | ENV | Import config from env.custom.yml"
       when:
         - env_custom_file.stat.exists
         - env_custom_file.stat.readable
@@ -45,14 +44,14 @@
         file: "/env/env.custom.yml"
       register: include_vars_env_custom
 
-- name: Load env.override.yml
+- name: "SLM | ENV | Load env.override.yml"
   block:
     - name: "Check if env.override.yml exists"
       ansible.builtin.stat:
         path: "/env/env.override.yml"
       register: env_override_file
 
-    - name: "Import config from env.override.yml"
+-    - name: "SLM | ENV | Import config from env.override.yml"
       when:
         - env_override_file.stat.exists
         - env_override_file.stat.readable
@@ -60,7 +59,7 @@
         file: "/env/env.override.yml"
       register: include_vars_env_override
 
-- name: "Combine facts from env.custom.yml and env.override.yml"
+- name: "SLM | ENV | Combine facts from env.custom.yml and env.override.yml"
   when: item.ansible_facts is defined
   ansible.builtin.set_fact:
     ENV: "{{ ENV | combine(item.ansible_facts, recursive=true) }}"
@@ -68,7 +67,7 @@
     - "{{ include_vars_env_custom }}"
     - "{{ include_vars_env_override }}"
 
-- name: "Create directories required by installer"
+- name: "SLM | ENV | Create directories required by installer"
   ansible.builtin.file:
     path: "{{ INSTALL_DIRECTORY }}/{{ item }}"
     state: directory
@@ -77,17 +76,17 @@
     - config
     - deployment
 
-- name: "Write env.yml to {{ INSTALL_DIRECTORY }} directory"
+- name: "SLM | ENV | Write env.yml to {{ INSTALL_DIRECTORY }} directory"
   ansible.builtin.copy:
     content: "{{ ENV | to_nice_yaml }}"
     dest: "{{ INSTALL_DIRECTORY }}/env.yml"
     mode: "0644"
 
-- name: "Print ENV variable"
+- name: "SLM | ENV | Print ENV variable"
   ansible.builtin.debug:
     var: ENV
 
-- name: "Define global facts"
+- name: "SLM | ENV | Define global facts"
   ansible.builtin.set_fact:
     traefik:
       url:
@@ -194,7 +193,7 @@
           internal: "{{ ENV.MINIO.SCHEME.INTERNAL }}://{{ ENV.MINIO.HOST.INTERNAL }}:{{ ENV.MINIO.CONSOLE_PORT.INTERNAL }}"
           external: "{{ ENV.MINIO.SCHEME.EXTERNAL }}://{{ ENV.MINIO.HOST.EXTERNAL }}:{{ ENV.MINIO.CONSOLE_PORT.EXTERNAL }}"
 
-- name: "Print global facts"
+- name: "SLM | ENV | Print global facts"
   ansible.builtin.debug:
     msg:
       catalog_service_internal: "{{ catalog_service.url.internal }}"
@@ -210,7 +209,7 @@
       awx_internal: "{{ awx.url.internal }}"
       awx_external: "{{ awx.url.external }}"
       consul_internal: "{{ consul.url.internal }}"
-      consul _external: "{{ consul.url.external }}"
+      consul_external: "{{ consul.url.external }}"
       vault_internal: "{{ vault.url.internal }}"
       vault_external: "{{ vault.url.external }}"
       keycloak_internal: "{{ keycloak.url.internal }}"

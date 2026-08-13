@@ -1,4 +1,5 @@
-- name: "Normalize optional driver compose definition"
+---
+- name: "SLM | Normalize optional driver compose definition"
   ansible.builtin.set_fact:
     optional_driver_compose_definition: >-
       {{
@@ -9,7 +10,7 @@
         ) | default({}, true)
       }}
 
-- name: "Ensure optional driver compose uses SLM default network"
+- name: "SLM | Ensure optional driver compose uses SLM default network"
   ansible.builtin.set_fact:
     optional_driver_compose_definition: >-
       {{
@@ -32,7 +33,7 @@
           )
       }}
 
-- name: "Validate optional driver compose definition"
+- name: "SLM | Validate optional driver compose definition"
   ansible.builtin.assert:
     that:
       - optional_driver_compose_definition is mapping
@@ -40,7 +41,7 @@
       - optional_driver_compose_definition.services | length > 0
     fail_msg: "RESOURCE_MANAGEMENT.DRIVERS.COMPOSE_DEFINITION must be a compose mapping with at least one service when RESOURCE_MANAGEMENT.DRIVERS.ENABLED is true."
 
-- name: "Start optional driver containers"
+- name: "SLM | Start optional driver containers"
   # delegate_to: '{{ ENV.DEPLOYMENT_HOST_HOSTNAME }}'
   community.docker.docker_compose_v2:
     project_name: "{{ ENV.COMPOSE_PROJECT_NAME }}"
@@ -48,9 +49,8 @@
     state: present
     pull: "{{ ENV.PULL_DOCKER_IMAGES }}"
 
-- name: "Store resulting compose file for optional driver containers"
+- name: "SLM | Store resulting compose file for optional driver containers"
   ansible.builtin.copy:
     content: "{{ optional_driver_compose_definition | to_nice_yaml(indent=2) }}"
     dest: "{{ _store_compose_dir | regex_replace('/+$', '') }}/slm.drivers.yml"
   when: (_store_compose_dir is defined) and (_store_compose_dir|length > 0)
-

@@ -1,5 +1,5 @@
-- name: "Create Keycloak clients"
-  include_role:
+- name: "SLM | Create Keycloak clients"
+  ansible.builtin.include_role:
     name: "eclipse-slm.keycloak_client"
     tasks_from: clients/create_client.yml
   vars:
@@ -8,8 +8,8 @@
     _keycloak_client: "{{ item }}"
   loop: "{{ keycloak_clients }}"
 
-- name: "Create Keycloak group for service account of clients"
-  include_role:
+- name: "SLM | Create Keycloak group for service account of clients"
+  ansible.builtin.include_role:
     name: "eclipse-slm.keycloak_client"
     tasks_from: groups/create_child_group_and_assign_user.yml
   vars:

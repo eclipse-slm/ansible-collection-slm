@@ -1,5 +1,5 @@
 ### Inputs
-- name: "MINIO | Assert inputs of 'minio/init | main.yml'"
+- name: "SLM | MINIO | Assert inputs of 'minio/init | main.yml'"
   ansible.builtin.assert:
     that:
       - (minio.url.api.internal is defined) and (minio.url.api.internal|length > 0)           # URL of the Minio instance
@@ -12,9 +12,9 @@
 ### Optional Inputs
 # _minio_wait_for_up: true|false # Whether to wait for Minio being up or not. Default: false
 
-- name: "MINIO | Get config"
+- name: "SLM | MINIO | Get config"
   block:
-    - name: "MINIO | Check if config exists in Consul"
+    - name: "SLM | MINIO | Check if config exists in Consul"
       community.general.consul_kv:
         scheme: "{{ ENV.CONSUL.SCHEME.INTERNAL }}"
         host: "{{ ENV.CONSUL.HOST.INTERNAL }}"
@@ -24,16 +24,16 @@
       register: minio_config_consul
       no_log: true
 
-    - name: "MINIO | Set minio_config"
+    - name: "SLM | MINIO | Set minio_config"
       ansible.builtin.set_fact:
         minio_config: "{{ minio_config_consul.data.Value | from_yaml }}"
       when: minio_config_consul.data.Value is defined
 
-    - name: "MINIO | Set Minio config"
+    - name: "SLM | MINIO | Set Minio config"
       when: minio_config_consul.data.Value is defined
       no_log: true
       block:
-        - name: "MINIO | Set admin password"
+        - name: "SLM | MINIO | Set admin password"
           ansible.builtin.set_fact:
             ENV: "{{ ENV | combine({
                     'MINIO': {
@@ -42,11 +42,11 @@
                     }, recursive=true) }}"
           when: (ENV.MINIO.ADMIN_PASSWORD is not defined) or (ENV.MINIO.ADMIN_PASSWORD | default([]) | length == 0)
 
-    - name: "MINIO | Create Minio config"
+    - name: "SLM | MINIO | Create Minio config"
       when: minio_config_consul.data.Value is not defined
       no_log: true
       block:
-        - name: "MINIO | Create admin password"
+        - name: "SLM | MINIO | Create admin password"
           when: (ENV.MINIO.ADMIN_PASSWORD is not defined) or (ENV.MINIO.ADMIN_PASSWORD | default([]) | length == 0)
           ansible.builtin.set_fact:
             ENV: "{{ ENV | combine({
@@ -55,7 +55,7 @@
                       }
                     }, recursive=true) }}"
 
-        - name: "MINIO | Update minio_config dictionary and override default values"
+        - name: "SLM | MINIO | Update minio_config dictionary and override default values"
           ansible.builtin.set_fact:
             minio_config: "{{ minio_config | combine(
             { 'scheme': ENV.MINIO.SCHEME.INTERNAL,
@@ -71,7 +71,7 @@
             }
         , recursive=true) }}"
 
-        - name: "MINIO | Store Minio config in Consul"
+        - name: "SLM | MINIO | Store Minio config in Consul"
           community.general.consul_kv:
             scheme: "{{ ENV.CONSUL.SCHEME.INTERNAL }}"
             host: "{{ ENV.CONSUL.HOST.INTERNAL }}"
@@ -82,13 +82,13 @@
           loop:
             - { key: "config/minio/data", value: "{{ minio_config | to_yaml }}"  }
 
-- name: "MINIO | Start Minio"
+- name: "SLM | MINIO | Start Minio"
   block:
-    - name: "MINIO | Create compose definition from template"
+    - name: "SLM | MINIO | Create compose definition from template"
       ansible.builtin.set_fact:
         minio_compose: "{{ lookup('template', 'minio.yml') }}"
 
-    - name: "MINIO | Start Minio containers"
+    - name: "SLM | MINIO | Start Minio containers"
       community.docker.docker_compose_v2:
         project_name: "{{ ENV.COMPOSE_PROJECT_NAME }}"
         definition: "{{ minio_compose | from_yaml}}"
@@ -96,7 +96,7 @@
         pull: "{{ ENV.PULL_DOCKER_IMAGES }}"
       register: minio_compose_start_output
 
-    - name: "MINIO | Wait for Minio ('{{ minio.url.console.internal }}') being up"
+    - name: "SLM | MINIO | Wait for Minio ('{{ minio.url.console.internal }}') being up"
       when: _minio_wait_for_up | default(false)
       ansible.builtin.uri:
         url: "{{ minio.url.console.internal }}"
@@ -106,14 +106,14 @@
       retries: 120
       delay: 3
 
-- name: "MINIO | Store resulting compose file"
+- name: "SLM | MINIO | Store resulting compose file"
   ansible.builtin.template:
     src: "minio.yml"
     dest: "{{ _store_compose_dir | regex_replace('/+$', '') }}/minio.yml"
   when: (_store_compose_dir is defined) and (_store_compose_dir|length > 0)
   no_log: true
 
-- name: "MINIO | Register Minio instance at Consul (discovery server)"
+- name: "SLM | MINIO | Register Minio instance at Consul (discovery server)"
   ansible.builtin.include_role:
     name: eclipse-slm.consul_client
     tasks_from: register_service
@@ -126,7 +126,7 @@
       - "minio"
   no_log: true
 
-- name: "MINIO | Install Minio Client"
+- name: "SLM | MINIO | Install Minio Client"
   ansible.builtin.include_role:
     name: eclipse-slm.minio_client
     tasks_from: install_mc.yml

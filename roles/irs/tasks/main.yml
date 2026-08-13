@@ -1,18 +1,18 @@
 ---
-- name: "Get config from Consul"
+- name: "SLM | IRS | Get config from Consul"
   ansible.builtin.include_role:
     name: eclipse-slm.consul_client
     tasks_from: get_app_config
   vars:
     _app_name: irs
 
-- name: "IRS | Start Information Receiving Service"
+- name: "SLM | IRS | Start Information Receiving Service"
   block:
-    - name: "IRS | Create compose fact"
+    - name: "SLM | IRS | Create compose fact"
       ansible.builtin.set_fact:
         irs_compose: "{{ lookup('template', 'irs.yml') }}"
 
-    - name: "Start containers"
+    - name: "SLM | IRS | Start containers"
       community.docker.docker_compose_v2:
         project_name: "{{ ENV.COMPOSE_PROJECT_NAME }}"
         definition: "{{ irs_compose | from_yaml}}"
@@ -20,7 +20,7 @@
         pull: "{{ ENV.PULL_DOCKER_IMAGES }}"
       register: irs_compose_start_output
 
-- name: "IRS | Register components at Consul (discovery server)"
+- name: "SLM | IRS | Register components at Consul (discovery server)"
   ansible.builtin.include_role:
     name: eclipse-slm.consul_client
     tasks_from: register_service
@@ -38,7 +38,7 @@
         - "exposed"
         - "traefik.http.routers.irs.rule=PathPrefix(`{{ ENV.IRS.PATH.EXTERNAL }}`)"
 
-- name: "Store resulting compose file"
+- name: "SLM | IRS | Store resulting compose file"
   ansible.builtin.template:
     src: "irs.yml"
     dest: "{{ _store_compose_dir | regex_replace('/+$', '') }}/irs.yml"

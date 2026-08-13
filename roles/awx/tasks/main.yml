@@ -132,7 +132,7 @@
     - name: "SLM | AWX | Decode Consul token"
       ansible.builtin.set_fact:
         app_configs: "{{ app_configs | combine(
-          { 
+          {
             'awx': {
               'consul': {
                 'token': app_configs.awx.consul.token
@@ -152,7 +152,7 @@
       ansible.builtin.set_fact:
         awx_compose: "{{ lookup('template', 'awx.yml') }}"
 
-    - name: "Start AWX containers"
+    - name: "SLM | AWX | Start AWX containers"
       # delegate_to: '{{ ENV.DEPLOYMENT_HOST_HOSTNAME }}'
       community.docker.docker_compose_v2:
         project_name: "{{ ENV.COMPOSE_PROJECT_NAME }}"
@@ -160,7 +160,7 @@
         state: present
         pull: "{{ ENV.PULL_DOCKER_IMAGES }}"
 
-    - name: "Wait for AWX ('{{ awx.url.internal }}') being up"
+    - name: "SLM | AWX | Wait for AWX ('{{ awx.url.internal }}') being up"
       ansible.builtin.uri:
         url: "{{ awx.url.internal }}"
         status_code: 200

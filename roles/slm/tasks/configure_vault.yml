@@ -49,9 +49,11 @@
     tasks_from: create_approle_and_assign_policies.yml
   vars:
     _vault_token: "{{ _vault_root_token }}"
-    _approle_name: "{{ item.name }}"
-    _approle_policy_names: "{{ item.policies }}"
+    _approle_name: "{{ item_approle.name }}"
+    _approle_policy_names: "{{ item_approle.policies }}"
   loop: "{{ vault_config.approles }}"
+  loop_control:
+    loop_var: item_approle
 
 - name: "SLM | Create Vault secret engine for AWX JWT Authenticator"
   ansible.builtin.include_role:
@@ -59,5 +61,7 @@
     tasks_from: create_kv_secret_engine
   vars:
     _vault_token: "{{ _vault_root_token }}"
-    _kv_secret_engine_name: "{{ item }}"
+    _kv_secret_engine_name: "{{ item_engine_name }}"
   loop: "{{ vault_config.kv_secret_engines }}"
+  loop_control:
+    loop_var: item_engine_name

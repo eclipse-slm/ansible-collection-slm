@@ -1,6 +1,6 @@
 services:
   minio:
-    image: quay.io/minio/minio:{{ ENV.MINIO.VERSION }}
+    image: ghcr.io/eclipse-slm/minio:{{ ENV.MINIO.VERSION }}
     restart: unless-stopped
     command: minio server --console-address :{{ ENV.MINIO.CONSOLE_PORT.INTERNAL }} --address :{{ ENV.MINIO.API_PORT.INTERNAL }}
     ports:

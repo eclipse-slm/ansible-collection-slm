@@ -27,6 +27,28 @@
     status_code: 200
   register: output_put_auth_method
 
+- name: "SLM | CONSUL | Create Keycloak client for Consul-UI"
+  ansible.builtin.include_role:
+    name: eclipse-slm.keycloak_client
+    tasks_from: clients/create_client.yml
+  vars:
+    _keycloak_client: "{{ consul_keycloak_client }}"
+    _keycloak_access_token: "{{ keycloak_access_token }}"
+    _keycloak_realm_name: "{{ ENV.KEYCLOAK.REALM }}"
+
+- name: "SLM | CONSUL | Get secret of Keycloak client for Consul-UI"
+  ansible.builtin.include_role:
+    name: eclipse-slm.keycloak_client
+    tasks_from: clients/get_client_secret.yml
+  vars:
+    _client_id: "{{ consul_keycloak_client.client_id }}"
+    _keycloak_access_token: "{{ keycloak_access_token }}"
+    _keycloak_realm_name: "{{ ENV.KEYCLOAK.REALM }}"
+
+- name: "SLM | CONSUL | Register secret in Consul facts"
+  ansible.builtin.set_fact:
+    consul_keycloak_client: "{{ consul_keycloak_client | combine({'client_secret': client_secret}, recursive=true) }}"
+
 - name: "SLM | CONSUL | Create token for SLM"
   block:
     - name: "SLM | CONSUL | Create SLM node"
@@ -87,3 +109,83 @@
         accessor_id: 00000000-0000-0000-0000-000000000002
         policies:
           - name: "anonymous-read"
+
+
+- name: "SLM | CONSUL | Create policy for consul-ui token"
+  community.general.consul_policy:
+    scheme: "{{ ENV.CONSUL.SCHEME.INTERNAL }}"
+    host: "{{ ENV.CONSUL.HOST.INTERNAL }}"
+    port: "{{ ENV.CONSUL.PORT.INTERNAL }}"
+    token: "{{ _consul_token }}"
+    name: consul-ui-read
+    rules: |
+      node_prefix ""    { policy = "read" }
+      service_prefix "" { policy = "read" }
+      key_prefix ""     { policy = "read" }
+
+- name: "SLM | CONSUL | Create token for consul-ui"
+  community.general.consul_token:
+    scheme: "{{ ENV.CONSUL.SCHEME.INTERNAL }}"
+    host: "{{ ENV.CONSUL.HOST.INTERNAL }}"
+    port: "{{ ENV.CONSUL.PORT.INTERNAL }}"
+    token: "{{ _consul_token }}"
+    state: present
+    description: "Token for consul-ui"
+    policies:
+      - name: "consul-ui-read"
+  register: consul_ui_token_response
+
+- name: "SLM | CONSUL | Register consul-oauth2-proxy"
+  ansible.builtin.include_role:
+    name: eclipse-slm.consul_client
+    tasks_from: register_service
+  vars:
+    _service_name: "consul-oauth2-proxy"
+    _service_port: 4180
+    _service_address: "consul-oauth2-proxy"
+    _additional_tags:
+      - "consul-oauth2-proxy"
+      - "exposed"
+      - traefik.http.routers.oauth2.rule=Host(`consul.{{ ENV.SLM_HOSTNAME }}`) && PathPrefix(`/oauth2/`)
+      - traefik.http.routers.oauth2.entrypoints=websecure
+      - traefik.http.routers.oauth2.tls=true
+      - traefik.http.routers.oauth2.priority=100
+      - traefik.http.routers.oauth2.service=consul-oauth2-proxy
+      - traefik.http.middlewares.consul-oauth-errors.errors.status=401-403
+      - traefik.http.middlewares.consul-oauth-errors.errors.service=consul-oauth2-proxy
+      - traefik.http.middlewares.consul-oauth-errors.errors.query=/oauth2/sign_in?rd={url}
+      - traefik.http.middlewares.consul-auth-readers.forwardauth.address=http://consul-oauth2-proxy:4180/oauth2/auth?allowed_groups=consul-readers
+      - traefik.http.middlewares.consul-auth-readers.forwardauth.trustForwardHeader=true
+      - traefik.http.middlewares.consul-auth-readers.forwardauth.authResponseHeaders=X-Auth-Request-Preferred-Username
+
+- name: "SLM | CONSUL | Register consul-ui"
+  ansible.builtin.include_role:
+    name: eclipse-slm.consul_client
+    tasks_from: register_service
+  vars:
+    _service_name: "consul-ui"
+    _service_port: 8500
+    _service_address: "consul"
+    _additional_tags:
+      - "consul"
+      - "exposed"
+      # TODO: Move to traefik file-based configuration in order to avoid token exposure in tags
+      - traefik.http.middlewares.consul-token-reader.headers.customrequestheaders.X-Consul-Token={{ consul_ui_token_response.token.SecretID }}
+      - traefik.http.routers.consul-reader.rule=Host(`consul.{{ ENV.SLM_HOSTNAME }}`)
+      - traefik.http.routers.consul-reader.entrypoints=web,websecure
+      - traefik.http.routers.consul-reader.tls=false
+      - traefik.http.routers.consul-reader.service=consul-ui
+      - traefik.http.routers.consul-reader.middlewares=consul-oauth-errors,consul-auth-readers,consul-token-reader
+
+- name: "SLM | CONSUL | Restart Consul containers for updating configuration"
+  block:
+    - name: "SLM | CONSUL | Create compose definition from template"
+      ansible.builtin.set_fact:
+        consul_compose: "{{ lookup('template', 'consul.yml') }}"
+
+    - name: "SLM | CONSUL | Start containers"
+      community.docker.docker_compose_v2:
+        project_name: "{{ ENV.COMPOSE_PROJECT_NAME }}"
+        definition: "{{ consul_compose | from_yaml}}"
+        state: present
+        pull: "{{ ENV.PULL_DOCKER_IMAGES }}"

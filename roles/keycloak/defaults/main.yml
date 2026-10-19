@@ -27,6 +27,10 @@ keycloak_groups_top_level:
     description: "Parent group for all user groups"
   - name: backendServices
     description: "Parent group for all backend services"
+  - name: consul-readers
+    description: "Group for all users with read access to Consul"
+
+keycloak_default_groups: ["consul-readers"]
 
 keycloak_realm_roles:
   - name: slm-user
@@ -44,4 +48,5 @@ keycloak_default_user:
     - type: password
       value: password
       temporary: false
-  realmRoles: [ "slm-user", "slm-admin" ]
+  realmRoles: ["slm-user", "slm-admin"]
+  groups: ["consul-readers"]

@@ -22,6 +22,11 @@
       pull: "{{ ENV.PULL_DOCKER_IMAGES }}"
     register: vault_compose_start_output
 
+  - name: "Vault | Ensure _store_compose_dir"
+    ansible.builtin.file:
+      path: "{{ _store_compose_dir | regex_replace('/+$', '') }}"
+      state: directory
+
   - name: "VAULT | Store resulting compose file"
     ansible.builtin.template:
       src: "vault.yml"

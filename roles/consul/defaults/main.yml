@@ -46,3 +46,16 @@ consul_keyloak_auth_method:
       "/realm_access/roles": resources
       aud: aud
   MaxTokenTTL: "1m"
+
+consul_oauth2_proxy_cookie_secret: E_yfcIY_1pmTUrxG88QTbRhM5XZm1lXQXxGsSyTBJbQ=
+
+consul_keycloak_client:
+  client_id: consul-ui
+  public_client: false
+  service_accounts_enabled: false
+  assign_client_role_to_service_account: false
+  protocol_mappers:
+    groups:
+      config:
+        full_path: false
+    audience: true

@@ -53,9 +53,9 @@ ansible:
 
   playbooks:
     create: "create-os.yml"
-    converge: converge.yml
     destroy: "destroy-os.yml"
     prepare: prepare.yml
+    converge: converge.yml
     verify: verify.yml
 
 scenario:

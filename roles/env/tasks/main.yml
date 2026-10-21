@@ -36,33 +36,36 @@
 
 - name: "SLM | ENV | Load env.custom.yml"
   block:
-    - name: "Check if env.custom.yml exists"
-      ansible.builtin.stat:
-        path: "{{ ENV_DIRECTORY }}/env.custom.yml"
-      register: env_custom_file
+    # Does not work if target host != localhost
+    # - name: "Check if env.custom.yml exists"
+    #   ansible.builtin.stat:
+    #     path: "{{ ENV_DIRECTORY }}/env.custom.yml"
+    #   register: env_custom_file
 
     - name: "SLM | ENV | Import config from env.custom.yml"
-      when:
-        - env_custom_file.stat.exists
-        - env_custom_file.stat.readable
+      # when:
+      #   - env_custom_file.stat.exists
+      #   - env_custom_file.stat.readable
       ansible.builtin.include_vars:
         file: "{{ ENV_DIRECTORY }}/env.custom.yml"
       register: include_vars_env_custom
+      ignore_errors: true
 
 - name: "SLM | ENV | Load env.override.yml"
   block:
-    - name: "Check if env.override.yml exists"
-      ansible.builtin.stat:
-        path: "{{ ENV_DIRECTORY }}/env.override.yml"
-      register: env_override_file
+    # - name: "Check if env.override.yml exists"
+    #   ansible.builtin.stat:
+    #     path: "{{ ENV_DIRECTORY }}/env.override.yml"
+    #   register: env_override_file
 
     - name: "SLM | ENV | Import config from env.override.yml"
-      when:
-        - env_override_file.stat.exists
-        - env_override_file.stat.readable
+      # when:
+      #   - env_override_file.stat.exists
+      #   - env_override_file.stat.readable
       ansible.builtin.include_vars:
         file: "{{ ENV_DIRECTORY }}/env.override.yml"
       register: include_vars_env_override
+      ignore_errors: true
 
 - name: "SLM | ENV | Combine facts from env.custom.yml and env.override.yml"
   when: item.ansible_facts is defined

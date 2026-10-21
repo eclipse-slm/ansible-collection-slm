@@ -30,6 +30,10 @@
   ansible.builtin.set_fact:
     ENV: "{{ ENV }}"
 
+- name: "SLM | ENV | Print ENV_DIRECTORY"
+  ansible.builtin.debug:
+    var: ENV_DIRECTORY
+
 - name: "SLM | ENV | Load env.custom.yml"
   block:
     - name: "Check if env.custom.yml exists"

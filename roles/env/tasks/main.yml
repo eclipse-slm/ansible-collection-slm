@@ -7,6 +7,7 @@
     SLM_HOSTNAME: "{{ lookup('ansible.builtin.env', 'SLM_HOSTNAME') }}"
     SLM_IP: "{{ lookup('ansible.builtin.env', 'SLM_IP') }}"
     INSTALL_DIRECTORY: "{{ lookup('ansible.builtin.env', 'INSTALL_DIRECTORY') }}"
+    ENV_DIRECTORY: "{{ lookup('ansible.builtin.env', 'ENV_DIRECTORY') | default('/env', true) }}"
 
 ### Inputs:
 - name: "SLM | ENV | Assert Inputs are set (SLM_VERSION, SLM_HOSTNAME, SLM_IP, INSTALL_DIRECTORY)"
@@ -33,7 +34,7 @@
   block:
     - name: "Check if env.custom.yml exists"
       ansible.builtin.stat:
-        path: "/env/env.custom.yml"
+        path: "{{ ENV_DIRECTORY }}/env.custom.yml"
       register: env_custom_file
 
     - name: "SLM | ENV | Import config from env.custom.yml"
@@ -41,14 +42,14 @@
         - env_custom_file.stat.exists
         - env_custom_file.stat.readable
       ansible.builtin.include_vars:
-        file: "/env/env.custom.yml"
+        file: "{{ ENV_DIRECTORY }}/env.custom.yml"
       register: include_vars_env_custom
 
 - name: "SLM | ENV | Load env.override.yml"
   block:
     - name: "Check if env.override.yml exists"
       ansible.builtin.stat:
-        path: "/env/env.override.yml"
+        path: "{{ ENV_DIRECTORY }}/env.override.yml"
       register: env_override_file
 
     - name: "SLM | ENV | Import config from env.override.yml"
@@ -56,7 +57,7 @@
         - env_override_file.stat.exists
         - env_override_file.stat.readable
       ansible.builtin.include_vars:
-        file: "/env/env.override.yml"
+        file: "{{ ENV_DIRECTORY }}/env.override.yml"
       register: include_vars_env_override
 
 - name: "SLM | ENV | Combine facts from env.custom.yml and env.override.yml"

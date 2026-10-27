@@ -84,6 +84,15 @@
       scheme: "{{ scheme }}"
       host: "{{ host }}"
       port: "{{ port }}"
+      aas:
+        broker:
+          host: "{{ ENV.AAS.AAS_BROKER.HOST.INTERNAL }}"
+          port: "{{ ENV.AAS.AAS_BROKER.PORT.INTERNAL }}"
+        aas-repository:
+          scheme: "{{ ENV.AAS.AAS_REPOSITORY.SCHEME.INTERNAL }}"
+          host: "{{ ENV.AAS.AAS_REPOSITORY.HOST.INTERNAL }}"
+          port: "{{ ENV.AAS.AAS_REPOSITORY.PORT.INTERNAL }}"
+          path: "{{ ENV.AAS.AAS_REPOSITORY.PATH.INTERNAL }}"
       awx:
         scheme: "{{ ENV.AWX.SCHEME.INTERNAL }}"
         host: "{{ ENV.AWX.HOST.INTERNAL }}"

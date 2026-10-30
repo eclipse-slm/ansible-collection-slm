@@ -5,6 +5,11 @@ collections:
     version: main
 
 roles:
+  - name: molecule_generic
+    src: https://github.com/eclipse-slm/molecule_generic.git
+    scm: git
+    version: main
+
   - src: "git+https://github.com/eclipse-slm/molecule_kubevirt"
     scm: git
     version: main

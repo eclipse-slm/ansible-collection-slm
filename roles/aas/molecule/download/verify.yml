@@ -1,0 +1,35 @@
+---
+# Purpose: assert that the instance really ended up in the expected state.
+# Molecule calls this playbook with `molecule verify`.
+- name: Verify
+  hosts: all
+  gather_facts: true
+  become: true
+  pre_tasks:
+    - name: Include env role from eclipse.slm collection
+      ansible.builtin.include_role:
+        name: eclipse.slm.env
+
+    - name: "Render AAS docker compose template"
+      ansible.builtin.set_fact:
+        aas_compose: "{{ lookup('template', lookup('env', 'MOLECULE_PROJECT_DIRECTORY') ~ '/templates/aas.yml') | from_yaml }}"
+
+  tasks:
+    - name: "Extract images from docker compose"
+      ansible.builtin.set_fact:
+        aas_images: "{{ aas_compose.services | dict2items | map(attribute='value.image') | unique | list }}"
+
+    - name: "Get image information"
+      community.docker.docker_image_info:
+        name: "{{ aas_images }}"
+      register: aas_image_info
+
+    - name: "Assert all images are downloaded"
+      ansible.builtin.assert:
+        that:
+          - aas_missing_images | length == 0
+        fail_msg: "Missing docker images: {{ aas_missing_images | join(', ') }}"
+        success_msg: "All {{ aas_images | length }} docker images are downloaded."
+      vars:
+        aas_present_images: "{{ aas_image_info.images | map(attribute='RepoTags') | flatten }}"
+        aas_missing_images: "{{ aas_images | reject('in', aas_present_images) | list }}"

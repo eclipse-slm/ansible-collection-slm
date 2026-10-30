@@ -1,0 +1,44 @@
+---
+# Purpose: assert that the instance really ended up in the expected state.
+# Molecule calls this playbook with `molecule verify`.
+- name: Verify
+  hosts: all
+  gather_facts: true
+  become: true
+  pre_tasks:
+    - name: Include env role from eclipse.slm collection
+      ansible.builtin.include_role:
+        name: eclipse.slm.env
+
+    - name: "Render AWX docker compose template"
+      ansible.builtin.set_fact:
+        awx_compose: "{{ lookup('template', lookup('env', 'MOLECULE_PROJECT_DIRECTORY') ~ '/templates/awx.yml', template_vars={'app_configs': _awx_placeholder_app_configs}) | from_yaml }}"
+      vars:
+        _awx_placeholder_app_configs:
+          awx_jwt_authenticator:
+            consul:
+              scheme: ""
+              host: ""
+              port: ""
+              acl-token: ""
+
+  tasks:
+    # Images without a tag (e.g. busybox) are stored by docker as '<image>:latest'
+    - name: "Extract images from docker compose"
+      ansible.builtin.set_fact:
+        awx_images: "{{ awx_compose.services | dict2items | map(attribute='value.image') | map('regex_replace', '^([^:]+)$', '\\1:latest') | unique | list }}"
+
+    - name: "Get image information"
+      community.docker.docker_image_info:
+        name: "{{ awx_images }}"
+      register: awx_image_info
+
+    - name: "Assert all images are downloaded"
+      ansible.builtin.assert:
+        that:
+          - awx_missing_images | length == 0
+        fail_msg: "Missing docker images: {{ awx_missing_images | join(', ') }}"
+        success_msg: "All {{ awx_images | length }} docker images are downloaded."
+      vars:
+        awx_present_images: "{{ awx_image_info.images | map(attribute='RepoTags') | flatten }}"
+        awx_missing_images: "{{ awx_images | reject('in', awx_present_images) | list }}"

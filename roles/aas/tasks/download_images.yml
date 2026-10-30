@@ -1,0 +1,22 @@
+---
+### Optional Inputs:
+# - eclipse_slm_aas_download_images_async (default: true)
+# - eclipse_slm_aas_download_images_async_timeout (default: 3600)
+
+- name: SLM | AAS | Generate AAS compose file
+  ansible.builtin.set_fact:
+    aas_compose: "{{ lookup('template', 'aas.yml') }}"
+
+- name: SLM | AAS | Download docker images asynchronously
+  when: eclipse_slm_aas_download_images_async | default(true)
+  community.docker.docker_compose_v2_pull:
+    project_name: "{{ ENV.COMPOSE_PROJECT_NAME }}"
+    definition: "{{ aas_compose | from_yaml }}"
+  async: "{{ eclipse_slm_aas_download_images_async_timeout | default(3600) }}"
+  poll: 0
+  register: eclipse_slm_aas_download_images_job
+
+- name: SLM | AAS | Download docker images synchronously
+  when: not (eclipse_slm_aas_download_images_async | default(true))
+  community.docker.docker_compose_v2_pull:
+    definition: "{{ aas_compose | from_yaml }}"

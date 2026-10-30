@@ -1,0 +1,34 @@
+---
+### Optional Inputs:
+# - eclipse_slm_awx_download_images_async (default: true)
+# - eclipse_slm_awx_download_images_async_timeout (default: 3600)
+
+# The compose template references runtime configs (e.g. the Consul token of the
+# JWT authenticator) which are not needed to pull images; fill them with
+# placeholders if they are not defined yet.
+- name: SLM | AWX | Generate AWX compose file
+  ansible.builtin.set_fact:
+    awx_compose: "{{ lookup('template', 'awx.yml', template_vars={'app_configs': _awx_placeholder_app_configs | combine(app_configs | default({}), recursive=true)}) }}"
+  vars:
+    _awx_placeholder_app_configs:
+      awx_jwt_authenticator:
+        consul:
+          scheme: ""
+          host: ""
+          port: ""
+          acl-token: ""
+
+- name: SLM | AWX | Download docker images asynchronously
+  when: eclipse_slm_awx_download_images_async | default(true)
+  community.docker.docker_compose_v2_pull:
+    project_name: "{{ ENV.COMPOSE_PROJECT_NAME }}"
+    definition: "{{ awx_compose | from_yaml }}"
+  async: "{{ eclipse_slm_awx_download_images_async_timeout | default(3600) }}"
+  poll: 0
+  register: eclipse_slm_awx_download_images_job
+
+- name: SLM | AWX | Download docker images synchronously
+  when: not (eclipse_slm_awx_download_images_async | default(true))
+  community.docker.docker_compose_v2_pull:
+    project_name: "{{ ENV.COMPOSE_PROJECT_NAME }}"
+    definition: "{{ awx_compose | from_yaml }}"

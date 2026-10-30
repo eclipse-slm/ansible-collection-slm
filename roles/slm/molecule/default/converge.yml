@@ -33,7 +33,7 @@
   tasks:
     - name: Apply role under test
       ansible.builtin.include_role:
-        name: ../../../slm
+        name: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') }}"
       vars:
         _consul_token: "{{ ENV.CONSUL.MASTER_TOKEN }}"
         _vault_token: "{{ vault_root_token }}"

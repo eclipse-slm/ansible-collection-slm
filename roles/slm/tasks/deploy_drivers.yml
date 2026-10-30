@@ -46,7 +46,6 @@
     project_name: "{{ ENV.COMPOSE_PROJECT_NAME }}"
     definition: "{{ optional_driver_compose_definition }}"
     state: present
-    pull: "{{ ENV.PULL_DOCKER_IMAGES }}"
 
 - name: "SLM | Store resulting compose file for optional driver containers"
   ansible.builtin.copy:

@@ -65,7 +65,6 @@
     project_name: "{{ ENV.COMPOSE_PROJECT_NAME }}"
     definition: "{{ traefik_compose | from_yaml}}"
     state: present
-    pull: "{{ ENV.PULL_DOCKER_IMAGES }}"
   register: traefik_compose_start_output
 
 - name: "Traefik | Wait for Traefik ('{{ traefik.url.api }}') being up"

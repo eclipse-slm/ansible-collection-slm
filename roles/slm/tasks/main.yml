@@ -119,7 +119,6 @@
         project_name: "{{ ENV.COMPOSE_PROJECT_NAME }}"
         definition: "{{ slm_compose | from_yaml }}"
         state: present
-        pull: "{{ ENV.PULL_DOCKER_IMAGES }}"
 
 - name: "SLM | Create SLM default users"
   block:
@@ -171,7 +170,6 @@
         project_name: "{{ ENV.COMPOSE_PROJECT_NAME }}"
         definition: "{{ slm_compose | from_yaml}}"
         state: present
-        pull: "{{ ENV.PULL_DOCKER_IMAGES }}"
 
 - name: "SLM | Start SLM components | Drivers (optional)"
   ansible.builtin.include_tasks: "deploy_drivers.yml"

@@ -19,7 +19,6 @@
       project_name: "{{ ENV.COMPOSE_PROJECT_NAME }}"
       definition: "{{ vault_compose | from_yaml }}"
       state: present
-      pull: "{{ ENV.PULL_DOCKER_IMAGES }}"
     register: vault_compose_start_output
 
   - name: "Vault | Ensure _store_compose_dir"

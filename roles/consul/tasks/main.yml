@@ -188,4 +188,3 @@
         project_name: "{{ ENV.COMPOSE_PROJECT_NAME }}"
         definition: "{{ consul_compose | from_yaml}}"
         state: present
-        pull: "{{ ENV.PULL_DOCKER_IMAGES }}"

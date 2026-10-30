@@ -21,6 +21,7 @@
   when: eclipse_slm_traefik_download_images_async | default(true) | bool
   community.docker.docker_compose_v2_pull:
     project_name: "{{ ENV.COMPOSE_PROJECT_NAME }}"
+    policy: "{{ ENV.PULL_DOCKER_IMAGES }}"
     definition: "{{ traefik_compose | from_yaml }}"
   async: "{{ eclipse_slm_traefik_download_images_async_timeout | default(3600) }}"
   poll: 0
@@ -30,4 +31,5 @@
   when: not (eclipse_slm_traefik_download_images_async | default(true) | bool)
   community.docker.docker_compose_v2_pull:
     project_name: "{{ ENV.COMPOSE_PROJECT_NAME }}"
+    policy: "{{ ENV.PULL_DOCKER_IMAGES }}"
     definition: "{{ traefik_compose | from_yaml }}"

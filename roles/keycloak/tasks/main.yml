@@ -112,7 +112,6 @@
         project_name: "{{ ENV.COMPOSE_PROJECT_NAME }}"
         definition: "{{ keycloak_compose | from_yaml}}"
         state: present
-        pull: "{{ ENV.PULL_DOCKER_IMAGES }}"
 
     - name: "SLM | KEYCLOAK | Wait for Keycloak ('{{ keycloak.url.external }}') being up"
       ansible.builtin.uri:

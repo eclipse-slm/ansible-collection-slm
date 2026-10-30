@@ -8,7 +8,6 @@
     project_name: "{{ ENV.COMPOSE_PROJECT_NAME }}"
     definition: "{{ catalog_compose | from_yaml }}"
     state: present
-    pull: "{{ ENV.PULL_DOCKER_IMAGES }}"
 
 - name: "SLM | Store resulting compose file"
   ansible.builtin.template:

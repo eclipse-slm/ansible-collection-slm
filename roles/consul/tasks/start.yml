@@ -61,7 +61,6 @@
         project_name: "{{ ENV.COMPOSE_PROJECT_NAME }}"
         definition: "{{ consul_compose | from_yaml}}"
         state: present
-        pull: "{{ ENV.PULL_DOCKER_IMAGES }}"
 
     - name: "SLM | CONSUL | Wait for Consul ('{{ consul.url.internal }}') being up"
       ansible.builtin.uri:

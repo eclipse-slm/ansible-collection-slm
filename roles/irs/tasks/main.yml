@@ -17,7 +17,6 @@
         project_name: "{{ ENV.COMPOSE_PROJECT_NAME }}"
         definition: "{{ irs_compose | from_yaml}}"
         state: present
-        pull: "{{ ENV.PULL_DOCKER_IMAGES }}"
       register: irs_compose_start_output
 
 - name: "SLM | IRS | Register components at Consul (discovery server)"

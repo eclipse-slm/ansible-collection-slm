@@ -1,0 +1,46 @@
+---
+# Purpose: assert that the instance really ended up in the expected state.
+# Molecule calls this playbook with `molecule verify`.
+- name: Verify
+  hosts: all
+  gather_facts: true
+  become: true
+  pre_tasks:
+    - name: Include env role from eclipse.slm collection
+      ansible.builtin.include_role:
+        name: eclipse.slm.env
+
+    - name: "Load placeholders for runtime configs"
+      ansible.builtin.include_vars:
+        file: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') }}/vars/download_images.yml"
+
+    - name: "Render SLM docker compose templates"
+      ansible.builtin.set_fact:
+        slm_compose: "{{ _slm_platform_management_compose | combine(_slm_compose, _slm_catalog_compose, recursive=true) }}"
+      vars:
+        _slm_templates_dir: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') }}/templates"
+        _slm_template_vars:
+          app_configs: "{{ slm_download_placeholder_app_configs }}"
+        _slm_platform_management_compose: "{{ lookup('template', _slm_templates_dir ~ '/slm-platform-management.yml', template_vars=_slm_template_vars) | from_yaml }}"
+        _slm_compose: "{{ lookup('template', _slm_templates_dir ~ '/slm.yml', template_vars=_slm_template_vars) | from_yaml }}"
+        _slm_catalog_compose: "{{ (lookup('template', _slm_templates_dir ~ '/catalog.yml', template_vars=_slm_template_vars) | from_yaml) if (ENV.SLM_CATALOG_SERVICE.ENABLED | default(true) | bool) else {} }}"
+
+  tasks:
+    - name: "Extract images from docker compose"
+      ansible.builtin.set_fact:
+        slm_images: "{{ slm_compose.services | dict2items | map(attribute='value.image') | unique | list }}"
+
+    - name: "Get image information"
+      community.docker.docker_image_info:
+        name: "{{ slm_images }}"
+      register: slm_image_info
+
+    - name: "Assert all images are downloaded"
+      ansible.builtin.assert:
+        that:
+          - slm_missing_images | length == 0
+        fail_msg: "Missing docker images: {{ slm_missing_images | join(', ') }}"
+        success_msg: "All {{ slm_images | length }} docker images are downloaded."
+      vars:
+        slm_present_images: "{{ slm_image_info.images | map(attribute='RepoTags') | flatten }}"
+        slm_missing_images: "{{ slm_images | reject('in', slm_present_images) | list }}"

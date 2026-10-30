@@ -61,6 +61,23 @@
           name: "{{ ENV.COMPOSE_PROJECT_NAME }}-installer-helper-1"
           state: absent
 
+    - name: Download SLM and Backend Docker images asynchronously
+      ansible.builtin.include_role:
+        name: "{{ item }}"
+        tasks_from: "download_images.yml"
+      loop:
+        - eclipse.slm.vault
+        - eclipse.slm.consul
+        - eclipse.slm.traefik
+        - eclipse.slm.keycloak
+        - eclipse.slm.rabbitmq
+        - eclipse.slm.minio
+        - eclipse.slm.awx
+        - eclipse.slm.aas
+        - eclipse.slm.monitoring
+        - eclipse.slm.discovery
+        - eclipse.slm.slm
+
     - name: Start SLM and Backend Services
       when: item.when | default(true)
       ansible.builtin.include_role:

@@ -32,6 +32,8 @@ ansible:
     # ANSIBLE-SPECIFIC:
     ANSIBLE_FORCE_COLOR: "1"
     ANSIBLE_LOAD_CALLBACK_PLUGINS: "1"
+    # kubevirt by default; MOLECULE_DRIVER=openstack selects the fallback
+    MOLECULE_DRIVER: ${MOLECULE_DRIVER:-kubevirt}
 
     # ROLE-SPECIFIC:
     SLM_HOSTNAME: myhost.local
@@ -45,16 +47,12 @@ ansible:
       ansible_playbook:
         - --diff
         - --force-handlers
-      ansible_navigator:
-        - --mode stdout
-        - --pull-policy missing
-        - --execution-environment-image ghcr.io/ansible/community-ansible-dev-tools:latest
 
   playbooks:
-    create: ../default/create-os.yml
+    create: create.yml
     converge: converge.yml
-    destroy: ../default/destroy-os.yml
-    prepare: ../default/prepare.yml
+    destroy: destroy.yml
+    prepare: prepare.yml
     verify: verify.yml
 
 scenario:

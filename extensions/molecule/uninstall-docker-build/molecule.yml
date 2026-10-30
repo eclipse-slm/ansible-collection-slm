@@ -9,7 +9,7 @@ dependency:
     requirements-file: ${MOLECULE_SCENARIO_DIRECTORY}/../default/requirements.yml
 
 platforms:
-  - name: slm-install-docker
+  - name: slm-uninstall-docker-build
     groups:
       - slm
     # Kubevirt
@@ -32,6 +32,8 @@ ansible:
     # ANSIBLE-SPECIFIC:
     ANSIBLE_FORCE_COLOR: "1"
     ANSIBLE_LOAD_CALLBACK_PLUGINS: "1"
+    # kubevirt by default; MOLECULE_DRIVER=openstack selects the fallback
+    MOLECULE_DRIVER: ${MOLECULE_DRIVER:-kubevirt}
 
     # ROLE-SPECIFIC:
     SLM_HOSTNAME: myhost.local
@@ -47,15 +49,11 @@ ansible:
         - --force-handlers
         - -e target_host="slm"
         - -e INSTALLER_API_COMMAND="uninstall"
-      ansible_navigator:
-        - --mode stdout
-        - --pull-policy missing
-        - --execution-environment-image ghcr.io/ansible/community-ansible-dev-tools:latest
 
   playbooks:
-    create: ../default/create-os.yml
+    create: ../default/create.yml
     converge: ../default-docker-build/converge.yml
-    destroy: ../default/destroy-os.yml
+    destroy: ../default/destroy.yml
     prepare: prepare.yml
     verify: ../default-uninstall/verify.yml
 

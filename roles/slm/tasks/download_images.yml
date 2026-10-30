@@ -1,0 +1,35 @@
+---
+### Optional Inputs:
+# - eclipse_slm_slm_download_images_async (default: true)
+# - eclipse_slm_slm_download_images_async_timeout (default: 3600)
+
+# Optional drivers and additional services are user-provided compose
+# definitions and are not covered here.
+- name: SLM | Load placeholders for runtime configs
+  ansible.builtin.include_vars:
+    file: download_images.yml
+
+- name: SLM | Generate SLM compose file
+  ansible.builtin.set_fact:
+    slm_download_compose: "{{ _slm_platform_management_compose | combine(_slm_compose, _slm_catalog_compose, recursive=true) }}"
+  vars:
+    _slm_template_vars:
+      app_configs: "{{ slm_download_placeholder_app_configs | combine(app_configs | default({}), recursive=true) }}"
+    _slm_platform_management_compose: "{{ lookup('template', 'slm-platform-management.yml', template_vars=_slm_template_vars) | from_yaml }}"
+    _slm_compose: "{{ lookup('template', 'slm.yml', template_vars=_slm_template_vars) | from_yaml }}"
+    _slm_catalog_compose: "{{ (lookup('template', 'catalog.yml', template_vars=_slm_template_vars) | from_yaml) if (ENV.SLM_CATALOG_SERVICE.ENABLED | default(true) | bool) else {} }}"
+
+- name: SLM | Download docker images asynchronously
+  when: eclipse_slm_slm_download_images_async | default(true) | bool
+  community.docker.docker_compose_v2_pull:
+    project_name: "{{ ENV.COMPOSE_PROJECT_NAME }}"
+    definition: "{{ slm_download_compose }}"
+  async: "{{ eclipse_slm_slm_download_images_async_timeout | default(3600) }}"
+  poll: 0
+  register: eclipse_slm_slm_download_images_job
+
+- name: SLM | Download docker images synchronously
+  when: not (eclipse_slm_slm_download_images_async | default(true) | bool)
+  community.docker.docker_compose_v2_pull:
+    project_name: "{{ ENV.COMPOSE_PROJECT_NAME }}"
+    definition: "{{ slm_download_compose }}"

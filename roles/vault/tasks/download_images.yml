@@ -1,0 +1,23 @@
+---
+### Optional Inputs:
+# - eclipse_slm_vault_download_images_async (default: true)
+# - eclipse_slm_vault_download_images_async_timeout (default: 3600)
+
+- name: SLM | VAULT | Generate Vault compose file
+  ansible.builtin.set_fact:
+    vault_compose: "{{ lookup('template', 'vault.yml') }}"
+
+- name: SLM | VAULT | Download docker images asynchronously
+  when: eclipse_slm_vault_download_images_async | default(true) | bool
+  community.docker.docker_compose_v2_pull:
+    project_name: "{{ ENV.COMPOSE_PROJECT_NAME }}"
+    definition: "{{ vault_compose | from_yaml }}"
+  async: "{{ eclipse_slm_vault_download_images_async_timeout | default(3600) }}"
+  poll: 0
+  register: eclipse_slm_vault_download_images_job
+
+- name: SLM | VAULT | Download docker images synchronously
+  when: not (eclipse_slm_vault_download_images_async | default(true) | bool)
+  community.docker.docker_compose_v2_pull:
+    project_name: "{{ ENV.COMPOSE_PROJECT_NAME }}"
+    definition: "{{ vault_compose | from_yaml }}"

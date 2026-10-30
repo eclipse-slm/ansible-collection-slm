@@ -1,0 +1,32 @@
+---
+### Optional Inputs:
+# - eclipse_slm_rabbitmq_download_images_async (default: true)
+# - eclipse_slm_rabbitmq_download_images_async_timeout (default: 3600)
+
+# The compose template references runtime config (the admin credentials) which
+# is not needed to pull images; fill it with placeholders if it is not defined yet.
+- name: SLM | RABBITMQ | Generate RabbitMQ compose file
+  ansible.builtin.set_fact:
+    rabbitmq_compose: "{{ lookup('template', 'rabbitmq.yml', template_vars={'app_configs': _rabbitmq_placeholder_app_configs | combine(app_configs | default({}), recursive=true)}) }}"
+  vars:
+    _rabbitmq_placeholder_app_configs:
+      rabbitmq:
+        users:
+          admin:
+            username: ""
+            password: ""
+
+- name: SLM | RABBITMQ | Download docker images asynchronously
+  when: eclipse_slm_rabbitmq_download_images_async | default(true) | bool
+  community.docker.docker_compose_v2_pull:
+    project_name: "{{ ENV.COMPOSE_PROJECT_NAME }}"
+    definition: "{{ rabbitmq_compose | from_yaml }}"
+  async: "{{ eclipse_slm_rabbitmq_download_images_async_timeout | default(3600) }}"
+  poll: 0
+  register: eclipse_slm_rabbitmq_download_images_job
+
+- name: SLM | RABBITMQ | Download docker images synchronously
+  when: not (eclipse_slm_rabbitmq_download_images_async | default(true) | bool)
+  community.docker.docker_compose_v2_pull:
+    project_name: "{{ ENV.COMPOSE_PROJECT_NAME }}"
+    definition: "{{ rabbitmq_compose | from_yaml }}"

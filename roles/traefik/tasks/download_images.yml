@@ -1,0 +1,33 @@
+---
+### Optional Inputs:
+# - eclipse_slm_traefik_download_images_async (default: true)
+# - eclipse_slm_traefik_download_images_async_timeout (default: 3600)
+
+# The compose template references runtime secrets (Consul token, Vault app role)
+# which are not needed to pull images; fill them with placeholders if they are
+# not defined yet.
+- name: SLM | TRAEFIK | Generate Traefik compose file
+  ansible.builtin.set_fact:
+    traefik_compose: "{{ lookup('template', 'traefik.yml', template_vars={'_consul_token': _consul_token | default(''), 'app_configs': _traefik_placeholder_app_configs | combine(app_configs | default({}), recursive=true)}) }}"
+  vars:
+    _traefik_placeholder_app_configs:
+      traefik:
+        vault:
+          app-role:
+            role-id: ""
+            secret-id: ""
+
+- name: SLM | TRAEFIK | Download docker images asynchronously
+  when: eclipse_slm_traefik_download_images_async | default(true) | bool
+  community.docker.docker_compose_v2_pull:
+    project_name: "{{ ENV.COMPOSE_PROJECT_NAME }}"
+    definition: "{{ traefik_compose | from_yaml }}"
+  async: "{{ eclipse_slm_traefik_download_images_async_timeout | default(3600) }}"
+  poll: 0
+  register: eclipse_slm_traefik_download_images_job
+
+- name: SLM | TRAEFIK | Download docker images synchronously
+  when: not (eclipse_slm_traefik_download_images_async | default(true) | bool)
+  community.docker.docker_compose_v2_pull:
+    project_name: "{{ ENV.COMPOSE_PROJECT_NAME }}"
+    definition: "{{ traefik_compose | from_yaml }}"

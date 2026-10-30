@@ -1,0 +1,26 @@
+---
+# Placeholders for the runtime configs the SLM compose templates reference
+# (Consul tokens, database credentials, API keys). They are not needed to pull
+# images; real values in app_configs take precedence.
+_slm_download_placeholder_service: &slm_download_placeholder_service
+  consul:
+    scheme: ""
+    host: ""
+    port: ""
+    acl-token: ""
+  database:
+    root_password: ""
+    username: ""
+    password: ""
+    schema: ""
+  security:
+    api-key-auth:
+      value: ""
+
+slm_download_placeholder_app_configs:
+  catalog_service: *slm_download_placeholder_service
+  information_service: *slm_download_placeholder_service
+  notification_service: *slm_download_placeholder_service
+  platform_management: *slm_download_placeholder_service
+  resource_management: *slm_download_placeholder_service
+  service_management: *slm_download_placeholder_service

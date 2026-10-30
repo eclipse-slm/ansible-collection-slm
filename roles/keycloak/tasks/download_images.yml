@@ -1,0 +1,41 @@
+---
+### Optional Inputs:
+# - eclipse_slm_keycloak_download_images_async (default: true)
+# - eclipse_slm_keycloak_download_images_async_timeout (default: 3600)
+
+# The compose template references runtime config (e.g. the admin credentials)
+# which is not needed to pull images; fill it with placeholders if it is not
+# defined yet.
+- name: SLM | KEYCLOAK | Generate Keycloak compose file
+  ansible.builtin.set_fact:
+    keycloak_compose: "{{ lookup('template', 'keycloak.yml', template_vars={'keycloak_config': _keycloak_placeholder_config | combine(keycloak_config | default({}), recursive=true)}) }}"
+  vars:
+    _keycloak_placeholder_config:
+      database:
+        host: ""
+        url_host: ""
+        schema: ""
+        username: ""
+        password: ""
+        root_password: ""
+      users:
+        admin:
+          username: ""
+          password: ""
+      http:
+        relative_path: ""
+
+- name: SLM | KEYCLOAK | Download docker images asynchronously
+  when: eclipse_slm_keycloak_download_images_async | default(true) | bool
+  community.docker.docker_compose_v2_pull:
+    project_name: "{{ ENV.COMPOSE_PROJECT_NAME }}"
+    definition: "{{ keycloak_compose | from_yaml }}"
+  async: "{{ eclipse_slm_keycloak_download_images_async_timeout | default(3600) }}"
+  poll: 0
+  register: eclipse_slm_keycloak_download_images_job
+
+- name: SLM | KEYCLOAK | Download docker images synchronously
+  when: not (eclipse_slm_keycloak_download_images_async | default(true) | bool)
+  community.docker.docker_compose_v2_pull:
+    project_name: "{{ ENV.COMPOSE_PROJECT_NAME }}"
+    definition: "{{ keycloak_compose | from_yaml }}"

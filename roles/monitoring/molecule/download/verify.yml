@@ -1,0 +1,35 @@
+---
+# Purpose: assert that the instance really ended up in the expected state.
+# Molecule calls this playbook with `molecule verify`.
+- name: Verify
+  hosts: all
+  gather_facts: true
+  become: true
+  pre_tasks:
+    - name: Include env role from eclipse.slm collection
+      ansible.builtin.include_role:
+        name: eclipse.slm.env
+
+    - name: "Render Monitoring docker compose template"
+      ansible.builtin.set_fact:
+        monitoring_compose: "{{ lookup('template', lookup('env', 'MOLECULE_PROJECT_DIRECTORY') ~ '/templates/monitoring.yml', template_vars={'_consul_token': ''}) | from_yaml }}"
+
+  tasks:
+    - name: "Extract images from docker compose"
+      ansible.builtin.set_fact:
+        monitoring_images: "{{ monitoring_compose.services | dict2items | map(attribute='value.image') | unique | list }}"
+
+    - name: "Get image information"
+      community.docker.docker_image_info:
+        name: "{{ monitoring_images }}"
+      register: monitoring_image_info
+
+    - name: "Assert all images are downloaded"
+      ansible.builtin.assert:
+        that:
+          - monitoring_missing_images | length == 0
+        fail_msg: "Missing docker images: {{ monitoring_missing_images | join(', ') }}"
+        success_msg: "All {{ monitoring_images | length }} docker images are downloaded."
+      vars:
+        monitoring_present_images: "{{ monitoring_image_info.images | map(attribute='RepoTags') | flatten }}"
+        monitoring_missing_images: "{{ monitoring_images | reject('in', monitoring_present_images) | list }}"

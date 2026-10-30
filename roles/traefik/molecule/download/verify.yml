@@ -1,0 +1,42 @@
+---
+# Purpose: assert that the instance really ended up in the expected state.
+# Molecule calls this playbook with `molecule verify`.
+- name: Verify
+  hosts: all
+  gather_facts: true
+  become: true
+  pre_tasks:
+    - name: Include env role from eclipse.slm collection
+      ansible.builtin.include_role:
+        name: eclipse.slm.env
+
+    - name: "Render Traefik docker compose template"
+      ansible.builtin.set_fact:
+        traefik_compose: "{{ lookup('template', lookup('env', 'MOLECULE_PROJECT_DIRECTORY') ~ '/templates/traefik.yml', template_vars={'_consul_token': '', 'app_configs': _traefik_placeholder_app_configs}) | from_yaml }}"
+      vars:
+        _traefik_placeholder_app_configs:
+          traefik:
+            vault:
+              app-role:
+                role-id: ""
+                secret-id: ""
+
+  tasks:
+    - name: "Extract images from docker compose"
+      ansible.builtin.set_fact:
+        traefik_images: "{{ traefik_compose.services | dict2items | map(attribute='value.image') | unique | list }}"
+
+    - name: "Get image information"
+      community.docker.docker_image_info:
+        name: "{{ traefik_images }}"
+      register: traefik_image_info
+
+    - name: "Assert all images are downloaded"
+      ansible.builtin.assert:
+        that:
+          - traefik_missing_images | length == 0
+        fail_msg: "Missing docker images: {{ traefik_missing_images | join(', ') }}"
+        success_msg: "All {{ traefik_images | length }} docker images are downloaded."
+      vars:
+        traefik_present_images: "{{ traefik_image_info.images | map(attribute='RepoTags') | flatten }}"
+        traefik_missing_images: "{{ traefik_images | reject('in', traefik_present_images) | list }}"

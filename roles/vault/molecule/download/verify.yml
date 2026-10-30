@@ -1,0 +1,35 @@
+---
+# Purpose: assert that the instance really ended up in the expected state.
+# Molecule calls this playbook with `molecule verify`.
+- name: Verify
+  hosts: all
+  gather_facts: true
+  become: true
+  pre_tasks:
+    - name: Include env role from eclipse.slm collection
+      ansible.builtin.include_role:
+        name: eclipse.slm.env
+
+    - name: "Render Vault docker compose template"
+      ansible.builtin.set_fact:
+        vault_compose: "{{ lookup('template', lookup('env', 'MOLECULE_PROJECT_DIRECTORY') ~ '/templates/vault.yml') | from_yaml }}"
+
+  tasks:
+    - name: "Extract images from docker compose"
+      ansible.builtin.set_fact:
+        vault_images: "{{ vault_compose.services | dict2items | map(attribute='value.image') | unique | list }}"
+
+    - name: "Get image information"
+      community.docker.docker_image_info:
+        name: "{{ vault_images }}"
+      register: vault_image_info
+
+    - name: "Assert all images are downloaded"
+      ansible.builtin.assert:
+        that:
+          - vault_missing_images | length == 0
+        fail_msg: "Missing docker images: {{ vault_missing_images | join(', ') }}"
+        success_msg: "All {{ vault_images | length }} docker images are downloaded."
+      vars:
+        vault_present_images: "{{ vault_image_info.images | map(attribute='RepoTags') | flatten }}"
+        vault_missing_images: "{{ vault_images | reject('in', vault_present_images) | list }}"

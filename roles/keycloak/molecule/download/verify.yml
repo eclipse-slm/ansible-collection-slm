@@ -1,0 +1,50 @@
+---
+# Purpose: assert that the instance really ended up in the expected state.
+# Molecule calls this playbook with `molecule verify`.
+- name: Verify
+  hosts: all
+  gather_facts: true
+  become: true
+  pre_tasks:
+    - name: Include env role from eclipse.slm collection
+      ansible.builtin.include_role:
+        name: eclipse.slm.env
+
+    - name: "Render Keycloak docker compose template"
+      ansible.builtin.set_fact:
+        keycloak_compose: "{{ lookup('template', lookup('env', 'MOLECULE_PROJECT_DIRECTORY') ~ '/templates/keycloak.yml', template_vars={'keycloak_config': _keycloak_placeholder_config}) | from_yaml }}"
+      vars:
+        _keycloak_placeholder_config:
+          database:
+            host: ""
+            url_host: ""
+            schema: ""
+            username: ""
+            password: ""
+            root_password: ""
+          users:
+            admin:
+              username: ""
+              password: ""
+          http:
+            relative_path: ""
+
+  tasks:
+    - name: "Extract images from docker compose"
+      ansible.builtin.set_fact:
+        keycloak_images: "{{ keycloak_compose.services | dict2items | map(attribute='value.image') | unique | list }}"
+
+    - name: "Get image information"
+      community.docker.docker_image_info:
+        name: "{{ keycloak_images }}"
+      register: keycloak_image_info
+
+    - name: "Assert all images are downloaded"
+      ansible.builtin.assert:
+        that:
+          - keycloak_missing_images | length == 0
+        fail_msg: "Missing docker images: {{ keycloak_missing_images | join(', ') }}"
+        success_msg: "All {{ keycloak_images | length }} docker images are downloaded."
+      vars:
+        keycloak_present_images: "{{ keycloak_image_info.images | map(attribute='RepoTags') | flatten }}"
+        keycloak_missing_images: "{{ keycloak_images | reject('in', keycloak_present_images) | list }}"

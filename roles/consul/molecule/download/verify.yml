@@ -1,0 +1,40 @@
+---
+# Purpose: assert that the instance really ended up in the expected state.
+# Molecule calls this playbook with `molecule verify`.
+- name: Verify
+  hosts: all
+  gather_facts: true
+  become: true
+  pre_tasks:
+    - name: Include env role from eclipse.slm collection
+      ansible.builtin.include_role:
+        name: eclipse.slm.env
+
+    # The compose template references role defaults (e.g. consul_local_config)
+    - name: "Load Consul role defaults"
+      ansible.builtin.include_vars:
+        file: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') }}/defaults/main.yml"
+
+    - name: "Render Consul docker compose template"
+      ansible.builtin.set_fact:
+        consul_compose: "{{ lookup('template', lookup('env', 'MOLECULE_PROJECT_DIRECTORY') ~ '/templates/consul.yml') | from_yaml }}"
+
+  tasks:
+    - name: "Extract images from docker compose"
+      ansible.builtin.set_fact:
+        consul_images: "{{ consul_compose.services | dict2items | map(attribute='value.image') | unique | list }}"
+
+    - name: "Get image information"
+      community.docker.docker_image_info:
+        name: "{{ consul_images }}"
+      register: consul_image_info
+
+    - name: "Assert all images are downloaded"
+      ansible.builtin.assert:
+        that:
+          - consul_missing_images | length == 0
+        fail_msg: "Missing docker images: {{ consul_missing_images | join(', ') }}"
+        success_msg: "All {{ consul_images | length }} docker images are downloaded."
+      vars:
+        consul_present_images: "{{ consul_image_info.images | map(attribute='RepoTags') | flatten }}"
+        consul_missing_images: "{{ consul_images | reject('in', consul_present_images) | list }}"

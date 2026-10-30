@@ -1,0 +1,35 @@
+---
+# Purpose: assert that the instance really ended up in the expected state.
+# Molecule calls this playbook with `molecule verify`.
+- name: Verify
+  hosts: all
+  gather_facts: true
+  become: true
+  pre_tasks:
+    - name: Include env role from eclipse.slm collection
+      ansible.builtin.include_role:
+        name: eclipse.slm.env
+
+    - name: "Render Discovery docker compose template"
+      ansible.builtin.set_fact:
+        discovery_compose: "{{ lookup('template', lookup('env', 'MOLECULE_PROJECT_DIRECTORY') ~ '/templates/discovery.yml') | from_yaml }}"
+
+  tasks:
+    - name: "Extract images from docker compose"
+      ansible.builtin.set_fact:
+        discovery_images: "{{ discovery_compose.services | dict2items | map(attribute='value.image') | unique | list }}"
+
+    - name: "Get image information"
+      community.docker.docker_image_info:
+        name: "{{ discovery_images }}"
+      register: discovery_image_info
+
+    - name: "Assert all images are downloaded"
+      ansible.builtin.assert:
+        that:
+          - discovery_missing_images | length == 0
+        fail_msg: "Missing docker images: {{ discovery_missing_images | join(', ') }}"
+        success_msg: "All {{ discovery_images | length }} docker images are downloaded."
+      vars:
+        discovery_present_images: "{{ discovery_image_info.images | map(attribute='RepoTags') | flatten }}"
+        discovery_missing_images: "{{ discovery_images | reject('in', discovery_present_images) | list }}"

@@ -1,0 +1,28 @@
+---
+# Purpose: bring the instance to the desired state by running the role under test.
+# Molecule calls this playbook with `molecule converge`.
+- name: Converge
+  hosts: all
+  gather_facts: true # Disable if your role does not rely on facts
+  become: true
+  pre_tasks:
+    - name: Apply roles
+      ansible.builtin.include_role:
+        name: "{{ item.role }}"
+        tasks_from: "{{ item.tasks_from | default('main') }}"
+      loop:
+        - role: eclipse.slm.env
+          tasks_from: main
+  tasks:
+    - name: Apply role under test
+      ansible.builtin.include_role:
+        name: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') }}"
+        tasks_from: download_images.yml
+
+    - name: Wait for asynchronous image download to complete
+      ansible.builtin.async_status:
+        jid: "{{ eclipse_slm_vault_download_images_job.ansible_job_id }}"
+      register: eclipse_slm_vault_download_images_result
+      until: eclipse_slm_vault_download_images_result.finished
+      retries: 60
+      delay: 10

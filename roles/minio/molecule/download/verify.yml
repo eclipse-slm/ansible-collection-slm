@@ -1,0 +1,35 @@
+---
+# Purpose: assert that the instance really ended up in the expected state.
+# Molecule calls this playbook with `molecule verify`.
+- name: Verify
+  hosts: all
+  gather_facts: true
+  become: true
+  pre_tasks:
+    - name: Include env role from eclipse.slm collection
+      ansible.builtin.include_role:
+        name: eclipse.slm.env
+
+    - name: "Render MinIO docker compose template"
+      ansible.builtin.set_fact:
+        minio_compose: "{{ lookup('template', lookup('env', 'MOLECULE_PROJECT_DIRECTORY') ~ '/templates/minio.yml') | from_yaml }}"
+
+  tasks:
+    - name: "Extract images from docker compose"
+      ansible.builtin.set_fact:
+        minio_images: "{{ minio_compose.services | dict2items | map(attribute='value.image') | unique | list }}"
+
+    - name: "Get image information"
+      community.docker.docker_image_info:
+        name: "{{ minio_images }}"
+      register: minio_image_info
+
+    - name: "Assert all images are downloaded"
+      ansible.builtin.assert:
+        that:
+          - minio_missing_images | length == 0
+        fail_msg: "Missing docker images: {{ minio_missing_images | join(', ') }}"
+        success_msg: "All {{ minio_images | length }} docker images are downloaded."
+      vars:
+        minio_present_images: "{{ minio_image_info.images | map(attribute='RepoTags') | flatten }}"
+        minio_missing_images: "{{ minio_images | reject('in', minio_present_images) | list }}"
